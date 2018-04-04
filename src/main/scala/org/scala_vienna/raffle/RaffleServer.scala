@@ -39,12 +39,15 @@ object RaffleServer {
     // List of participants
     private var participants = List.empty[String]
 
+    private var winner: Option[String] = None
+
     /** Process received messages */
     def receive: Receive = {
       // Client wants to register (for listening to messages broadcasted by the server)
       case RegisterClient =>
         clients += sender
         broadcast(Participants(participants))
+        if (winner.isDefined) broadcast(Winner(winner.get))
       // Client wants to participate
       case Participate(name) =>
         // no name, reply with failure
@@ -63,8 +66,9 @@ object RaffleServer {
           }
         }
       case StartRaffle => {
-        val winner = Random.nextInt(participants.size)
-        broadcast(Winner(participants(winner)))
+        val winnerIndex = Random.nextInt(participants.size)
+        winner = Some(participants(winnerIndex))
+        broadcast(Winner(winner.get))
       }
     }
 
