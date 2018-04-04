@@ -55,7 +55,7 @@ object RaffleServer {
           sender ! ParticipateFailure(s"Name '$name' already subscribed")
         // add client to raffle, broadcast new participant list to clients
         else {
-          if (name == "stevan") {
+          if (name == "raffle2018Coord") {
             sender ! YouAreCoordinator
           } else {
             participants :+= name
