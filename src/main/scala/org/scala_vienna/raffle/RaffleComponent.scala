@@ -87,7 +87,11 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     }
 
     case Winner(name) => {
-      winnerLabel.setValue(s"$winnerCaption $name")
+      if (name.isDefined) {
+        winnerLabel.setValue(s"$winnerCaption ${name.get}")
+      } else {
+        winnerLabel.setValue(winnerCaption)
+      }
     }
   }
 }

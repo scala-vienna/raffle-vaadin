@@ -23,7 +23,7 @@ object RaffleServer {
 
   case object StartRaffle
 
-  case class Winner(name: String)
+  case class Winner(name: Option[String])
 
   case object RegisterClient
 
@@ -49,7 +49,7 @@ object RaffleServer {
       case RegisterClient =>
         clients += sender
         BroadcastParticipants()
-        if (winner.isDefined) broadcast(Winner(winner.get))
+        broadcast(Winner(winner))
       // Client wants to participate
       case Participate(name) =>
         // no name, reply with failure
@@ -71,7 +71,7 @@ object RaffleServer {
         if (participants.size > 0) {
           val winnerIndex = Random.nextInt(participants.size)
           winner = Some(participants(winnerIndex))
-          broadcast(Winner(winner.get))
+          broadcast(Winner(winner))
         }
       }
       case Clear => {
