@@ -10,7 +10,7 @@ import com.vaadin.ui._
 import scala.collection.JavaConverters._
 
 class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends CustomComponent with VaactorComponent {
-  /** Contains list of chatroom menbers */
+  /** Contains list of raffle participants */
   val participantsList = new java.util.ArrayList[String]()
   val participantsDataProvider: ListDataProvider[String] = DataProvider.ofCollection[String](participantsList)
   val participantsPanel: ListSelect[String] = new ListSelect("Raffle Participants", participantsDataProvider) {
@@ -18,26 +18,26 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   }
 
   /** Contains username */
-  val userName = new TextField()
+  val participantName = new TextField()
 
-  val loginPanel: HorizontalLayout = new HorizontalLayout {
+  val enterPanel: HorizontalLayout = new HorizontalLayout {
     setSpacing(true)
     addComponents(
-      userName,
-      new Button("Enter Raffle", _ => { RaffleServer.raffleServer ! Subscribe(Client(userName.getValue, self)) })
+      participantName,
+      new Button("Enter Raffle", _ => { RaffleServer.raffleServer ! Participate(Client(participantName.getValue, self)) })
     )
   }
 
 
-  /** Contains user interface for login/logout and sending of messages */
-  val userPanel = new Panel(
+  /** Contains Enter panel */
+  val enterPanelContainer = new Panel(
     new VerticalLayout {
       setSpacing(true)
       setMargin(true)
       addComponents(
         new HorizontalLayout {
           setSpacing(true)
-          addComponents(loginPanel)
+          addComponents(enterPanel)
         })
     }
   )
@@ -63,7 +63,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
         addComponents(
           new VerticalLayout {
             setSpacing(true)
-            addComponents(userPanel)
+            addComponents(enterPanelContainer)
           },
           participantsPanel)
       },
@@ -74,14 +74,14 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */
   override def receive: PartialFunction[Any, Unit] = {
-    // User entered chatroom, update member list
-    case Enter(participants) =>
+    // User entered raffle, update participants list
+    case Participants(participants) =>
 
       participantsList.clear()
       participantsList.addAll(participants.asJava)
       participantsDataProvider.refreshAll()
 
-    case SubscriptionFailure(error) =>
+    case ParticipateFailure(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)
 
     case YouAreCoordinator => startButton.setVisible(true)
