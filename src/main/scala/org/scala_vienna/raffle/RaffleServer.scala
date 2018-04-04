@@ -27,6 +27,8 @@ object RaffleServer {
 
   case object RegisterClient
 
+  case object Clear
+
   /** ActoRef of raffle actor */
   val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
 
@@ -46,7 +48,7 @@ object RaffleServer {
       // Client wants to register (for listening to messages broadcasted by the server)
       case RegisterClient =>
         clients += sender
-        broadcast(Participants(participants))
+        BroadcastParticipants()
         if (winner.isDefined) broadcast(Winner(winner.get))
       // Client wants to participate
       case Participate(name) =>
@@ -62,7 +64,7 @@ object RaffleServer {
             sender ! YouAreCoordinator
           } else {
             participants :+= name
-            broadcast(Participants(participants))
+            BroadcastParticipants()
           }
         }
       case StartRaffle => {
@@ -70,7 +72,13 @@ object RaffleServer {
         winner = Some(participants(winnerIndex))
         broadcast(Winner(winner.get))
       }
+      case Clear => {
+        participants = List.empty[String]
+        BroadcastParticipants()
+      }
     }
+
+    private def BroadcastParticipants() = broadcast(Participants(participants))
 
     /** Send message to every client in chatroom
       *

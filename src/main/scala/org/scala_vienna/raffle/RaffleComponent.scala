@@ -37,6 +37,10 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   }
 
   val startButton = new Button("Start", _ => { RaffleServer.raffleServer ! StartRaffle })
+  startButton.setVisible(false)
+
+  val clearButton = new Button("Clear", _ => { RaffleServer.raffleServer ! Clear })
+  clearButton.setVisible(false)
 
   val winnerCaption = "Winner:"
 
@@ -44,8 +48,6 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     setValue(winnerCaption)
     addStyleName(ValoTheme.LABEL_H2)
   }
-
-  startButton.setVisible(false)
 
   setCompositionRoot(new VerticalLayout {
     addComponents(
@@ -56,6 +58,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
       enterPanel,
       participantsPanel,
       startButton,
+      clearButton,
       winnerLabel)
   })
 
@@ -73,7 +76,10 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     case ParticipateFailure(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)
 
-    case YouAreCoordinator => startButton.setVisible(true)
+    case YouAreCoordinator => {
+      startButton.setVisible(true)
+      clearButton.setVisible(true)
+    }
 
     case Winner(name) => {
       winnerLabel.setValue(s"$winnerCaption $name")
