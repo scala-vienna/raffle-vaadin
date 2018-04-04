@@ -38,9 +38,11 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
 
   val startButton = new Button("Start", _ => { RaffleServer.raffleServer ! StartRaffle })
   startButton.setVisible(false)
+  startButton.setEnabled(false)
 
   val clearButton = new Button("Clear", _ => { RaffleServer.raffleServer ! Clear })
   clearButton.setVisible(false)
+  clearButton.setEnabled(false)
 
   val winnerCaption = "Winner:"
 
@@ -72,6 +74,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
       participantsList.clear()
       participantsList.addAll(participants.asJava)
       participantsDataProvider.refreshAll()
+
+      startButton.setEnabled(participants.size > 0)
+      clearButton.setEnabled(participants.size > 0)
 
     case ParticipateFailure(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)
