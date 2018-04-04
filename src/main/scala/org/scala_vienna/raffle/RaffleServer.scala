@@ -68,9 +68,11 @@ object RaffleServer {
           }
         }
       case StartRaffle => {
-        val winnerIndex = Random.nextInt(participants.size)
-        winner = Some(participants(winnerIndex))
-        broadcast(Winner(winner.get))
+        if (participants.size > 0) {
+          val winnerIndex = Random.nextInt(participants.size)
+          winner = Some(participants(winnerIndex))
+          broadcast(Winner(winner.get))
+        }
       }
       case Clear => {
         participants = List.empty[String]
