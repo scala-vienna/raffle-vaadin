@@ -1,9 +1,7 @@
 package org.scala_vienna.raffle
 
 import org.vaadin.addons.vaactor.VaactorServlet
-
 import akka.actor.{ Actor, ActorRef, Props }
-
 import scala.util.Random
 
 object RaffleServer {
@@ -65,16 +63,12 @@ object RaffleServer {
             sender ! YouAreCoordinator
           }
           participants += client.name -> client
-          //sender ! SubscriptionSuccess(client.name)
           broadcast(Enter(participants.keys.toList))
         }
       case StartRaffle => {
         val winner = Random.nextInt(participants.size)
         broadcast(Result(participants.keys.toSeq(winner)))
       }
-      // RequestMembers from client, send member list to sending client
-      //case RequestMembers =>
-      //  sender ! Participants(participants.keySet.toList)
     }
 
     /** Send message to every client in chatroom

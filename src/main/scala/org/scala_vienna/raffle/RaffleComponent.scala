@@ -17,15 +17,6 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     setWidth(100, Sizeable.Unit.PIXELS)
   }
 
-  /** Contains list of messages from chatroom */
-  //val chatList = new java.util.ArrayList[ChatServer.Statement]()
-  //val chatDataProvider: ListDataProvider[ChatServer.Statement] = DataProvider.ofCollection[ChatServer.Statement](chatList)
-  //val chatPanel: Grid[ChatServer.Statement] = new Grid[ChatServer.Statement]("Chat", chatDataProvider) {
-  //  addColumn(d => d.name)
-  //  addColumn(d => d.msg)
-  //  setWidth(400, Sizeable.Unit.PIXELS)
-  //}
-
   /** Contains username */
   val userName = new TextField()
 

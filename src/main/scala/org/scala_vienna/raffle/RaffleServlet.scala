@@ -1,7 +1,6 @@
 package org.scala_vienna.raffle
 
 import javax.servlet.annotation.WebServlet
-
 import org.vaadin.addons.vaactor.VaactorServlet
 import com.vaadin.annotations.VaadinServletConfiguration
 
