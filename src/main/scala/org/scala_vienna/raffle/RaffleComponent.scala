@@ -13,62 +13,50 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   /** Contains list of raffle participants */
   val participantsList = new java.util.ArrayList[String]()
   val participantsDataProvider: ListDataProvider[String] = DataProvider.ofCollection[String](participantsList)
-  val participantsPanel: ListSelect[String] = new ListSelect("Raffle Participants", participantsDataProvider) {
-    setWidth(100, Sizeable.Unit.PIXELS)
-  }
+  val participantWidth = 200
 
-  /** Contains username */
-  val participantName = new TextField()
+  /** Contains participant name */
+  val participantName = new TextField("Name:")
+  participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
+
+  val enterButton = new Button("Enter Raffle", _ => {
+    RaffleServer.raffleServer ! Participate(Client(participantName.getValue, self))
+  })
 
   val enterPanel: HorizontalLayout = new HorizontalLayout {
     setSpacing(true)
     addComponents(
       participantName,
-      new Button("Enter Raffle", _ => { RaffleServer.raffleServer ! Participate(Client(participantName.getValue, self)) })
-    )
+      enterButton)
+    setComponentAlignment(participantName, Alignment.BOTTOM_LEFT)
+    setComponentAlignment(enterButton, Alignment.BOTTOM_LEFT)
   }
 
-
-  /** Contains Enter panel */
-  val enterPanelContainer = new Panel(
-    new VerticalLayout {
-      setSpacing(true)
-      setMargin(true)
-      addComponents(
-        new HorizontalLayout {
-          setSpacing(true)
-          addComponents(enterPanel)
-        })
-    }
-  )
+  val participantsPanel: ListSelect[String] = new ListSelect("Participants:", participantsDataProvider) {
+    setWidth(participantWidth, Sizeable.Unit.PIXELS)
+  }
 
   val startButton = new Button("Start", _ => { RaffleServer.raffleServer ! StartRaffle })
 
+  val winnerCaption = "Winner:"
+
   val winnerLabel: Label = new Label {
-    setValue("Winner: ")
+    setValue(winnerCaption)
     addStyleName(ValoTheme.LABEL_H2)
   }
 
   startButton.setVisible(false)
 
   setCompositionRoot(new VerticalLayout {
-
     addComponents(
       new Label {
         setValue(title)
         addStyleName(ValoTheme.LABEL_H1)
       },
-      new HorizontalLayout {
-        setSpacing(true)
-        addComponents(
-          new VerticalLayout {
-            setSpacing(true)
-            addComponents(enterPanelContainer)
-          },
-          participantsPanel)
-      },
-      winnerLabel,
-      startButton)
+      enterPanel,
+      participantsPanel,
+      startButton,
+      winnerLabel)
   })
 
 
@@ -87,7 +75,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     case YouAreCoordinator => startButton.setVisible(true)
 
     case Result(name) => {
-      winnerLabel.setValue(s"Winner: $name")
+      winnerLabel.setValue(s"$winnerCaption $name")
     }
   }
 }
