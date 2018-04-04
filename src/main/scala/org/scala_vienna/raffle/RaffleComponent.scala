@@ -20,7 +20,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
 
   val enterButton = new Button("Enter Raffle", _ => {
-    RaffleServer.raffleServer ! Participate(Client(participantName.getValue, self))
+    RaffleServer.raffleServer ! Participate(participantName.getValue)
   })
 
   val enterPanel: HorizontalLayout = new HorizontalLayout {
@@ -59,6 +59,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
       winnerLabel)
   })
 
+  RaffleServer.raffleServer ! RegisterClient
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */
   override def receive: PartialFunction[Any, Unit] = {

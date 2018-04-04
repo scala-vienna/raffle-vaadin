@@ -1,23 +1,17 @@
 package org.scala_vienna.raffle
 
 import org.vaadin.addons.vaactor.VaactorServlet
-import akka.actor.{ Actor, ActorRef, Props }
+import akka.actor.{Actor, ActorRef, Props}
+import scala.collection.immutable.HashSet
 import scala.util.Random
 
 object RaffleServer {
 
-  /** Clients handled by raffle
-    *
-    * @param name  name of user
-    * @param actor actorref for communication
-    */
-  case class Client(name: String, actor: ActorRef)
-
   /** Participant wants to enter raffle, processed by server
     *
-    * @param client client of participant
+    * @param name name of new participant
     */
-  case class Participate(client: Client)
+  case class Participate(name: String)
 
   case class ParticipateSuccess(name: String)
 
@@ -31,36 +25,46 @@ object RaffleServer {
 
   case class Winner(name: String)
 
+  case object RegisterClient
+
   /** ActoRef of raffle actor */
   val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
 
   /** Actor handling chatroom */
   class ServerActor extends Actor {
 
+    // List of clients
+    private var clients = Set.empty[ActorRef]
+
     // List of participants
-    private var participants = Map.empty[String, Client]
+    private var participants = List.empty[String]
 
     /** Process received messages */
     def receive: Receive = {
+      // Client wants to register (for listening to messages broadcasted by the server)
+      case RegisterClient =>
+        clients += sender
+        broadcast(Participants(participants))
       // Client wants to participate
-      case Participate(client) =>
+      case Participate(name) =>
         // no name, reply with failure
-        if (client.name.isEmpty)
+        if (name.isEmpty)
           sender ! ParticipateFailure("Empty name not valid")
         // duplicate name, reply with failure
-        else if (participants.contains(client.name))
-          sender ! ParticipateFailure(s"Name '${ client.name }' already subscribed")
+        else if (participants.contains(name))
+          sender ! ParticipateFailure(s"Name '$name' already subscribed")
         // add client to raffle, broadcast new participant list to clients
         else {
-          if (client.name == "stevan") {
+          if (name == "stevan") {
             sender ! YouAreCoordinator
+          } else {
+            participants :+= name
+            broadcast(Participants(participants))
           }
-          participants += client.name -> client
-          broadcast(Participants(participants.keys.toList))
         }
       case StartRaffle => {
         val winner = Random.nextInt(participants.size)
-        broadcast(Winner(participants.keys.toSeq(winner)))
+        broadcast(Winner(participants(winner)))
       }
     }
 
@@ -68,7 +72,7 @@ object RaffleServer {
       *
       * @param msg message
       */
-    def broadcast(msg: Any): Unit = participants foreach { _._2.actor ! msg }
+    def broadcast(msg: Any): Unit = clients foreach { _ ! msg }
 
   }
 
