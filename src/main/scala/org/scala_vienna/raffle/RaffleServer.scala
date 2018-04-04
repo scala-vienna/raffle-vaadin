@@ -29,7 +29,7 @@ object RaffleServer {
 
   case object StartRaffle
 
-  case class Result(name: String)
+  case class Winner(name: String)
 
   /** ActoRef of raffle actor */
   val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
@@ -60,7 +60,7 @@ object RaffleServer {
         }
       case StartRaffle => {
         val winner = Random.nextInt(participants.size)
-        broadcast(Result(participants.keys.toSeq(winner)))
+        broadcast(Winner(participants.keys.toSeq(winner)))
       }
     }
 

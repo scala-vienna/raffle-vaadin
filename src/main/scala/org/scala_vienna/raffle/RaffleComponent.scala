@@ -74,7 +74,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
 
     case YouAreCoordinator => startButton.setVisible(true)
 
-    case Result(name) => {
+    case Winner(name) => {
       winnerLabel.setValue(s"$winnerCaption $name")
     }
   }
