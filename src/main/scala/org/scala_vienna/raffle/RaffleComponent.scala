@@ -3,8 +3,9 @@ package org.scala_vienna.raffle
 import org.scala_vienna.raffle.RaffleServer._
 import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
 import org.vaadin.addons.vaactor.VaactorUI
-import com.vaadin.data.provider.{ DataProvider, ListDataProvider }
+import com.vaadin.data.provider.{DataProvider, ListDataProvider}
 import com.vaadin.server.Sizeable
+import com.vaadin.shared.ui.ContentMode
 import com.vaadin.ui.themes.ValoTheme
 import com.vaadin.ui._
 import scala.collection.JavaConverters._
@@ -22,6 +23,10 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   val participantName = new TextField("Name:")
   participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
 
+  val participantNameLabel = new Label("", ContentMode.HTML)
+  participantNameLabel.setWidth(participantWidth, Sizeable.Unit.PIXELS)
+  participantNameLabel.setVisible(false)
+
   val enterButton = new Button("Enter Raffle", _ => { RaffleServer.raffleServer ! Participate(participantName.getValue) })
 
   val leaveButton = new Button("Leave Raffle", _ => {
@@ -35,9 +40,11 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     setSpacing(true)
     addComponents(
       participantName,
+      participantNameLabel,
       enterButton,
       leaveButton)
     setComponentAlignment(participantName, Alignment.BOTTOM_LEFT)
+    setComponentAlignment(participantNameLabel, Alignment.BOTTOM_LEFT)
     setComponentAlignment(enterButton, Alignment.BOTTOM_LEFT)
     setComponentAlignment(leaveButton, Alignment.BOTTOM_LEFT)
   }
@@ -91,14 +98,18 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
       myName = Some(name)
       enterButton.setVisible(false)
       leaveButton.setVisible(true)
-      participantName.setReadOnly(true)
+      participantName.setVisible(false)
+      participantNameLabel.setValue(s"Good luck, <b>$name</b>!")
+      participantNameLabel.setVisible(true)
 
     case LeaveSuccess(name) =>
       if (myName.isDefined && myName.get == name) {
         myName = None
         enterButton.setVisible(true)
         leaveButton.setVisible(false)
-        participantName.setReadOnly(false)
+        participantName.setValue(name)
+        participantName.setVisible(true)
+        participantNameLabel.setVisible(false)
       }
 
     case Failure(error) =>
