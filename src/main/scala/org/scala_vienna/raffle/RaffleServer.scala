@@ -81,22 +81,20 @@ object RaffleServer {
           BroadcastParticipants()
           sender ! LeaveSuccess(name)
         }
-      case StartRaffle => {
+      case StartRaffle =>
         if (participants.size > 0) {
           val winnerIndex = Random.nextInt(participants.size)
           winner = Some(participants(winnerIndex))
           broadcast(Winner(winner))
         }
-      }
-      case Clear => {
+      case Clear =>
         participants = List.empty[String]
         BroadcastParticipants()
-      }
     }
 
     private def BroadcastParticipants() = broadcast(Participants(participants))
 
-    /** Send message to every client in chatroom
+    /** Send message to every client
       *
       * @param msg message
       */

@@ -10,6 +10,7 @@ import com.vaadin.ui._
 import scala.collection.JavaConverters._
 
 class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends CustomComponent with VaactorComponent {
+  /** This component's name if participating */
   var myName: Option[String] = None
 
   /** Contains list of raffle participants */
@@ -79,7 +80,6 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   override def receive: PartialFunction[Any, Unit] = {
     // User entered raffle, update participants list
     case Participants(participants) =>
-
       participantsList.clear()
       participantsList.addAll(participants.asJava)
       participantsDataProvider.refreshAll()
@@ -104,17 +104,15 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
     case Failure(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)
 
-    case YouAreCoordinator => {
+    case YouAreCoordinator =>
       startButton.setVisible(true)
       clearButton.setVisible(true)
-    }
 
-    case Winner(name) => {
+    case Winner(name) =>
       if (name.isDefined) {
         winnerLabel.setValue(s"$winnerCaption ${name.get}")
       } else {
         winnerLabel.setValue(winnerCaption)
       }
-    }
   }
 }
