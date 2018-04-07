@@ -10,6 +10,8 @@ import com.vaadin.ui._
 import scala.collection.JavaConverters._
 
 class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends CustomComponent with VaactorComponent {
+  var myName: Option[String] = None
+
   /** Contains list of raffle participants */
   val participantsList = new java.util.ArrayList[String]()
   val participantsDataProvider: ListDataProvider[String] = DataProvider.ofCollection[String](participantsList)
@@ -19,17 +21,24 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
   val participantName = new TextField("Name:")
   participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
 
-  val enterButton = new Button("Enter Raffle", _ => {
-    RaffleServer.raffleServer ! Participate(participantName.getValue)
+  val enterButton = new Button("Enter Raffle", _ => { RaffleServer.raffleServer ! Participate(participantName.getValue) })
+
+  val leaveButton = new Button("Leave Raffle", _ => {
+    if (myName.isDefined) {
+      RaffleServer.raffleServer ! Leave(myName.get)
+    }
   })
+  leaveButton.setVisible(false)
 
   val enterPanel: HorizontalLayout = new HorizontalLayout {
     setSpacing(true)
     addComponents(
       participantName,
-      enterButton)
+      enterButton,
+      leaveButton)
     setComponentAlignment(participantName, Alignment.BOTTOM_LEFT)
     setComponentAlignment(enterButton, Alignment.BOTTOM_LEFT)
+    setComponentAlignment(leaveButton, Alignment.BOTTOM_LEFT)
   }
 
   val participantsPanel: ListSelect[String] = new ListSelect("Participants:", participantsDataProvider) {
@@ -78,7 +87,21 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String) extends 
       startButton.setEnabled(participants.size > 0)
       clearButton.setEnabled(participants.size > 0)
 
-    case ParticipateFailure(error) =>
+    case ParticipateSuccess(name) =>
+      myName = Some(name)
+      enterButton.setVisible(false)
+      leaveButton.setVisible(true)
+      participantName.setReadOnly(true)
+
+    case LeaveSuccess(name) =>
+      if (myName.isDefined && myName.get == name) {
+        myName = None
+        enterButton.setVisible(true)
+        leaveButton.setVisible(false)
+        participantName.setReadOnly(false)
+      }
+
+    case Failure(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)
 
     case YouAreCoordinator => {

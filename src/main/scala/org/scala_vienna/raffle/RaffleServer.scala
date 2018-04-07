@@ -15,9 +15,13 @@ object RaffleServer {
 
   case class ParticipateSuccess(name: String)
 
-  case class ParticipateFailure(error: String)
+  case class Failure(error: String)
 
   case class Participants(participants: List[String])
+
+  case class Leave(name: String)
+
+  case class LeaveSuccess(name: String)
 
   case object YouAreCoordinator
 
@@ -54,10 +58,10 @@ object RaffleServer {
       case Participate(name) =>
         // no name, reply with failure
         if (name.isEmpty)
-          sender ! ParticipateFailure("Empty name not valid")
+          sender ! Failure("Empty name not valid")
         // duplicate name, reply with failure
         else if (participants.contains(name))
-          sender ! ParticipateFailure(s"Name '$name' already subscribed")
+          sender ! Failure(s"Name '$name' already participating")
         // add client to raffle, broadcast new participant list to clients
         else {
           if (name == "raffle2018Coord") {
@@ -65,7 +69,17 @@ object RaffleServer {
           } else {
             participants :+= name
             BroadcastParticipants()
+            sender ! ParticipateSuccess(name)
           }
+        }
+      case Leave(name) =>
+        if (!participants.contains(name)) {
+          sender ! Failure(s"Name '$name' not participating")
+        }
+        else {
+          participants = participants.filter(_ != name)
+          BroadcastParticipants()
+          sender ! LeaveSuccess(name)
         }
       case StartRaffle => {
         if (participants.size > 0) {
