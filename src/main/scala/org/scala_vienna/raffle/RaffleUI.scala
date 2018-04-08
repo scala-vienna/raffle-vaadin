@@ -13,6 +13,6 @@ import com.vaadin.shared.ui.ui.Transport
 class RaffleUI extends VaactorUI {
 
   override def init(request: VaadinRequest): Unit =
-    setContent(new RaffleComponent(this, "Vaactor Raffle"))
+    setContent(new RaffleComponent(this, "Vaactor Raffle", sessionActor))
 
 }

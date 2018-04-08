@@ -11,27 +11,35 @@ object RaffleServer {
     *
     * @param name name of new participant
     */
-  case class Participate(name: String)
+  case class Participate(name: String, session: ActorRef)
 
-  case class ParticipateSuccess(name: String)
+  case class Coordinate(session: ActorRef)
 
-  case class Failure(error: String)
-
-  case class Participants(participants: List[String])
-
-  case class Leave(name: String)
-
-  case class LeaveSuccess(name: String)
-
-  case object YouAreCoordinator
+  case class Leave(session: ActorRef)
 
   case object StartRaffle
 
+  case class Remove(name: String)
+
+  case object RemoveAll
+
+  case object RegisterSession
+
+  case class ParticipateSuccess(name: String)
+
+  case object CoordinateSuccess
+
+  case object LeaveSuccess
+
   case class Winner(name: Option[String])
 
-  case object RegisterClient
+  case class Participants(participants: List[String])
 
-  case object Clear
+  case class Error(error: String)
+
+  case class GetParticipants(ui: ActorRef)
+
+  case class GetWinner(ui: ActorRef)
 
   /** ActoRef of raffle actor */
   val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
@@ -39,8 +47,8 @@ object RaffleServer {
   /** Actor handling chatroom */
   class ServerActor extends Actor {
 
-    // List of clients
-    private var clients = Set.empty[ActorRef]
+    // List of sessions
+    private var sessions = Map.empty[ActorRef, SessionState.State]
 
     // List of participants
     private var participants = List.empty[String]
@@ -49,37 +57,35 @@ object RaffleServer {
 
     /** Process received messages */
     def receive: Receive = {
-      // Client wants to register (for listening to messages broadcasted by the server)
-      case RegisterClient =>
-        clients += sender
-        BroadcastParticipants()
-        broadcast(Winner(winner))
-      // Client wants to participate
-      case Participate(name) =>
+      // Session wants to participate
+      case Participate(name, session) =>
         // no name, reply with failure
         if (name.isEmpty)
-          sender ! Failure("Empty name not valid")
+          sender ! Error("Empty name not valid")
         // duplicate name, reply with failure
         else if (participants.contains(name))
-          sender ! Failure(s"Name '$name' already participating")
-        // add client to raffle, broadcast new participant list to clients
+          sender ! Error(s"Name '$name' already participating")
+        // add session to raffle, broadcast new participant list to sessions
         else {
-          if (name == "raffle2018Coord") {
-            sender ! YouAreCoordinator
-          } else {
-            participants :+= name
-            BroadcastParticipants()
-            sender ! ParticipateSuccess(name)
-          }
-        }
-      case Leave(name) =>
-        if (!participants.contains(name)) {
-          sender ! Failure(s"Name '$name' not participating")
-        }
-        else {
-          participants = participants.filter(_ != name)
+          participants :+= name
+          updateState(session, SessionState.Participating(name))
           BroadcastParticipants()
-          sender ! LeaveSuccess(name)
+        }
+      case Coordinate(session) => {
+        updateState(session, SessionState.Coordinator)
+      }
+      case Leave(session) =>
+        sessions.get(session) match {
+          case Some(SessionState.None) =>
+            sender ! Error("Cannot leave raffle. Not participating.")
+          case Some(SessionState.Participating(name)) =>
+            participants = participants.filter(_ != name)
+            updateState(session, SessionState.None)
+            BroadcastParticipants()
+          case Some(SessionState.Coordinator) =>
+            updateState(session, SessionState.None)
+          case None =>
+            sender ! Error("Cannot leave raffle. Not participating.")
         }
       case StartRaffle =>
         if (participants.size > 0) {
@@ -87,18 +93,48 @@ object RaffleServer {
           winner = Some(participants(winnerIndex))
           broadcast(Winner(winner))
         }
-      case Clear =>
+      case Remove(name) =>
+        val matchingSessions = sessions.filter {
+          case (_, SessionState.Participating(`name`)) => true
+          case _ => false
+        }.map(_._1)
+        for (session <- matchingSessions) {
+          updateState(session, SessionState.None)
+        }
+        participants = participants.filter(_ != name)
+        BroadcastParticipants()
+      case RemoveAll =>
+        val allSessions: Iterable[ActorRef] = sessions.keys
+        for (session <- allSessions) {
+          if (sessions(session).isInstanceOf[SessionState.Participating]) {
+            updateState(session, SessionState.None)
+          }
+        }
         participants = List.empty[String]
         BroadcastParticipants()
+      // Session wants to register (for listening to messages broadcasted by the server)
+      case RegisterSession =>
+        sessions += (sender -> SessionState.None)
+        sender ! Participants(participants)
+        sender ! Winner(winner)
+
+      case GetParticipants(ui) => ui ! Participants(participants)
+
+      case GetWinner(ui) => ui ! Winner(winner)
+    }
+
+    private def updateState(session: ActorRef, newState: SessionState.State): Unit = {
+      sessions = sessions.updated(session, newState)
+      session ! newState
     }
 
     private def BroadcastParticipants() = broadcast(Participants(participants))
 
-    /** Send message to every client
+    /** Send message to every session
       *
       * @param msg message
       */
-    def broadcast(msg: Any): Unit = clients foreach { _ ! msg }
+    def broadcast(msg: Any): Unit = sessions.keys foreach { _ ! msg }
 
   }
 

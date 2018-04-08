@@ -1,5 +1,6 @@
 package org.scala_vienna.raffle
 
+import akka.actor.Props
 import javax.servlet.annotation.WebServlet
 import org.vaadin.addons.vaactor.VaactorServlet
 import com.vaadin.annotations.VaadinServletConfiguration
@@ -15,4 +16,7 @@ import com.vaadin.annotations.VaadinServletConfiguration
   productionMode = false,
   ui = classOf[RaffleUI]
 )
-class RaffleServlet extends VaactorServlet
+class RaffleServlet extends VaactorServlet {
+  /** Define session actor to be created for every session */
+  override val sessionProps = Some(Props(classOf[Session]))
+}
