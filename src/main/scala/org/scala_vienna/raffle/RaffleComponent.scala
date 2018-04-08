@@ -1,8 +1,7 @@
 package org.scala_vienna.raffle
 
-import java.util
 import akka.actor.ActorRef
-import org.scala_vienna.raffle.RaffleServer.{LeaveSuccess, _}
+import org.scala_vienna.raffle.RaffleServer._
 import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
 import org.vaadin.addons.vaactor.VaactorUI
 import com.vaadin.data.provider.{DataProvider, ListDataProvider}
@@ -115,7 +114,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
       enterButton.setVisible(false)
       leaveButton.setVisible(true)
       participantName.setVisible(false)
-      participantNameLabel.setValue(s"You are a coordinator!")
+      participantNameLabel.setValue(s"You are the coordinator!")
       participantNameLabel.setVisible(true)
       startButton.setVisible(true)
       removeButton.setVisible(true)

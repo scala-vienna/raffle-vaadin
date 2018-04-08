@@ -11,7 +11,7 @@ object Session {
 
 class Session extends Actor with VaactorSession[SessionState.State] {
 
-  // List of UIs
+  // List of UIs of this session
   private var uis = Set.empty[ActorRef]
 
   RaffleServer.raffleServer ! RegisterSession
@@ -22,9 +22,7 @@ class Session extends Actor with VaactorSession[SessionState.State] {
     case newState: SessionState.State =>
       sessionState = newState
       broadcast(sessionState)
-    case msg @ Winner(name) =>
-      broadcast(msg)
-    case msg @ Participants(participants) =>
+    case msg @ (Winner(_) | Participants(_)) =>
       broadcast(msg)
     case RegisterUI =>
       uis += sender

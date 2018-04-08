@@ -2,7 +2,6 @@ package org.scala_vienna.raffle
 
 import org.vaadin.addons.vaactor.VaactorServlet
 import akka.actor.{Actor, ActorRef, Props}
-import scala.collection.immutable.HashSet
 import scala.util.Random
 
 object RaffleServer {
@@ -13,47 +12,79 @@ object RaffleServer {
     */
   case class Participate(name: String, session: ActorRef)
 
+  /** Client wants to be coordinator (can start, Reset, ...)
+    *
+    * @param session session ActorRef of client, processed by server
+    */
   case class Coordinate(session: ActorRef)
 
+  /** Client wants to stop participating or being coordinator
+    *
+    * @param session session ActorRef of client, processed by server
+    */
   case class Leave(session: ActorRef)
 
+  /** Client wants to start the Raffle, processed by server */
   case object StartRaffle
 
+  /** Coordinator wants to remove one participant
+    *
+    * @param name name of participant, processed by server
+    */
   case class Remove(name: String)
 
+  /** Coordinator wants to remove all participants, processed by server */
   case object RemoveAll
 
   case object RegisterSession
 
-  case class ParticipateSuccess(name: String)
-
-  case object CoordinateSuccess
-
-  case object LeaveSuccess
-
+  /** The winner is... or no winner yet, sent by server or session */
   case class Winner(name: Option[String])
 
+  /** The current participants are..., sent by server or session */
   case class Participants(participants: List[String])
 
   case class Error(error: String)
 
+  /** Someone wants to know the current list of particpants
+    *
+    * @param ui UI ActorRef to send the info to, processed by server
+    */
   case class GetParticipants(ui: ActorRef)
 
+  /** Someone wants to know the current winner
+    *
+    * @param ui UI ActorRef to send the info to, processed by server
+    */
   case class GetWinner(ui: ActorRef)
 
   /** ActoRef of raffle actor */
   val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
 
-  /** Actor handling chatroom */
+  /** Actor handling Raffle server */
   class ServerActor extends Actor {
 
-    // List of sessions
+    // Current sessions with their state
     private var sessions = Map.empty[ActorRef, SessionState.State]
 
-    // List of participants
-    private var participants = List.empty[String]
+    // Current participants
+    private var _participants = List.empty[String]
+    private def participants: List[String] = _participants
+    private def participants_=(newVal: List[String]): Unit = {
+      if (_participants.size != newVal.size) {
+        winner = None
+      }
+      _participants = newVal
+      broadcast(Participants(_participants))
+    }
 
-    private var winner: Option[String] = None
+    // Current winner
+    private var _winner: Option[String] = None
+    private def winner: Option[String] = _winner
+    private def winner_=(newVal: Option[String]): Unit = {
+      _winner = newVal
+      broadcast(Winner(_winner))
+    }
 
     /** Process received messages */
     def receive: Receive = {
@@ -69,40 +100,42 @@ object RaffleServer {
         else {
           participants :+= name
           updateState(session, SessionState.Participating(name))
-          BroadcastParticipants()
         }
       case Coordinate(session) => {
-        updateState(session, SessionState.Coordinator)
+        if (sessions.values.toSeq.contains(SessionState.Coordinator)) {
+          sender ! Error(s"A coordinator is already active.")
+        } else {
+          sessions.get(session) match {
+            case Some(SessionState.None) =>
+              updateState(session, SessionState.Coordinator)
+            case _ =>
+              sender ! Error("Session cannot be coordinator because it is unkown/participating/coordinator.")
+          }
+        }
       }
       case Leave(session) =>
         sessions.get(session) match {
-          case Some(SessionState.None) =>
-            sender ! Error("Cannot leave raffle. Not participating.")
           case Some(SessionState.Participating(name)) =>
             participants = participants.filter(_ != name)
             updateState(session, SessionState.None)
-            BroadcastParticipants()
           case Some(SessionState.Coordinator) =>
             updateState(session, SessionState.None)
-          case None =>
+          case Some(SessionState.None) | None =>
             sender ! Error("Cannot leave raffle. Not participating.")
         }
       case StartRaffle =>
         if (participants.size > 0) {
           val winnerIndex = Random.nextInt(participants.size)
           winner = Some(participants(winnerIndex))
-          broadcast(Winner(winner))
         }
       case Remove(name) =>
-        val matchingSessions = sessions.filter {
-          case (_, SessionState.Participating(`name`)) => true
-          case _ => false
-        }.map(_._1)
+        val matchingSessions = sessions.collect {
+          case (session, SessionState.Participating(`name`)) => session
+        }
         for (session <- matchingSessions) {
           updateState(session, SessionState.None)
         }
         participants = participants.filter(_ != name)
-        BroadcastParticipants()
       case RemoveAll =>
         val allSessions: Iterable[ActorRef] = sessions.keys
         for (session <- allSessions) {
@@ -110,11 +143,13 @@ object RaffleServer {
             updateState(session, SessionState.None)
           }
         }
+
         participants = List.empty[String]
-        BroadcastParticipants()
       // Session wants to register (for listening to messages broadcasted by the server)
       case RegisterSession =>
-        sessions += (sender -> SessionState.None)
+        if (!sessions.contains(sender)) {
+          sessions += (sender -> SessionState.None)
+        }
         sender ! Participants(participants)
         sender ! Winner(winner)
 
@@ -127,8 +162,6 @@ object RaffleServer {
       sessions = sessions.updated(session, newState)
       session ! newState
     }
-
-    private def BroadcastParticipants() = broadcast(Participants(participants))
 
     /** Send message to every session
       *
