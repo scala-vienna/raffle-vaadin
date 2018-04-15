@@ -5,7 +5,9 @@ import org.scala_vienna.raffle.RaffleServer._
 import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
 import org.vaadin.addons.vaactor.VaactorUI
 import com.vaadin.data.provider.{DataProvider, ListDataProvider}
+import com.vaadin.event.{FieldEvents, ShortcutAction, ShortcutListener}
 import com.vaadin.server.Sizeable
+import com.vaadin.shared.Registration
 import com.vaadin.shared.ui.ContentMode
 import com.vaadin.ui.themes.ValoTheme
 import com.vaadin.ui._
@@ -25,6 +27,29 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
   /** Contains participant name */
   val participantName = new TextField("Name:")
   participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
+
+  val enterListener = new ShortcutListener("Submit", ShortcutAction.KeyCode.ENTER, Array.empty[Int]: _*) {
+    override def handleAction(sender: scala.Any, target: scala.Any): Unit = {
+      enterButton.click()
+    }
+  }
+
+  private var registration: Registration = null
+
+  participantName.addBlurListener((event: FieldEvents.BlurEvent) => {
+    if (registration != null) {
+      registration.remove()
+      registration = null
+    }
+  })
+
+  participantName.addFocusListener((event: FieldEvents.FocusEvent) => {
+    if (registration == null) {
+      registration = participantName.addShortcutListener(enterListener)
+    }
+  })
+
+  participantName.focus()
 
   val participantNameLabel = new Label("", ContentMode.HTML)
   participantNameLabel.setWidth(participantWidth, Sizeable.Unit.PIXELS)
