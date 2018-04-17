@@ -5,7 +5,7 @@ import org.scala_vienna.raffle.RaffleServer._
 import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
 import org.vaadin.addons.vaactor.VaactorUI
 import com.vaadin.data.provider.{DataProvider, ListDataProvider}
-import com.vaadin.server.Sizeable
+import com.vaadin.server.{ExternalResource, Sizeable}
 import com.vaadin.shared.ui.ContentMode
 import com.vaadin.ui.themes.ValoTheme
 import com.vaadin.ui._
@@ -85,6 +85,8 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     addStyleName(ValoTheme.LABEL_H2)
   }
 
+  val footer: Link = new Link("Source code (GitHub)", new ExternalResource("https://github.com/scala-vienna/vaadin-raffle"))
+
   setCompositionRoot(new VerticalLayout {
     addComponents(
       new Label {
@@ -96,7 +98,8 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
       startButton,
       removeButton,
       removeAllButton,
-      winnerLabel)
+      winnerLabel,
+      footer)
   })
 
   sessionActor ! RegisterUI
