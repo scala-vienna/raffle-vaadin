@@ -80,8 +80,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     setComponentAlignment(leaveButton, Alignment.BOTTOM_LEFT)
   }
 
-  val participantsPanel: ListSelect[String] = new ListSelect("Participants:", participantsDataProvider) {
+  val participantsPanel: Grid[String] = new Grid(participantsDataProvider) {
     setWidth(participantWidth, Sizeable.Unit.PIXELS)
+    addColumn(s => s).setCaption("Participants:")
   }
 
   val startButton = new Button("Start", _ => { RaffleServer.raffleServer ! StartRaffle })
