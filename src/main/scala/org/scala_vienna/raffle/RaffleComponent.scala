@@ -35,19 +35,16 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     }
   }
 
-  private var registration: Registration = _
+  private var registration: Option[Registration] = None
 
   participantName.addBlurListener((_: FieldEvents.BlurEvent) => {
-    if (registration != null) {
-      registration.remove()
-      registration = null
-    }
+    for (r <- registration) r.remove()
+    registration = None
   })
 
   participantName.addFocusListener((_: FieldEvents.FocusEvent) => {
-    if (registration == null) {
-      registration = participantName.addShortcutListener(enterListener)
-    }
+    if (registration.isEmpty)
+      registration = Some(participantName.addShortcutListener(enterListener))
   })
 
   participantName.focus()
