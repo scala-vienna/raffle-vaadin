@@ -2,14 +2,14 @@ name := "vaadin-raffle"
 
 version := "1.1.1"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.5"
 
 resolvers ++= Seq(
   "vaadin-addons" at "http://maven.vaadin.com/vaadin-addons"
 )
 
-val vaadinVersion = "8.3.1"
-val akkaVersion = "2.5.11"
+val vaadinVersion = "8.4.0"
+val akkaVersion = "2.5.12"
 libraryDependencies ++= Seq(
   "org.vaadin.addons" % "vaactor" % "1.0.2",
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
