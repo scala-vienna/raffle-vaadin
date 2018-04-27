@@ -1,9 +1,9 @@
 package org.scala_vienna.raffle
 
 import akka.actor.Props
+import com.vaadin.annotations.VaadinServletConfiguration
 import javax.servlet.annotation.WebServlet
 import org.vaadin.addons.vaactor.VaactorServlet
-import com.vaadin.annotations.VaadinServletConfiguration
 
 /** Define servlet, url pattern and ui-class to start
   *

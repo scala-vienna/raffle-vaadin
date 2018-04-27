@@ -1,7 +1,8 @@
 package org.scala_vienna.raffle
 
-import org.vaadin.addons.vaactor.VaactorServlet
 import akka.actor.{Actor, ActorRef, Props}
+import org.vaadin.addons.vaactor.VaactorServlet
+
 import scala.util.Random
 
 object RaffleServer {
@@ -69,7 +70,9 @@ object RaffleServer {
 
     // Current participants
     private var _participants = List.empty[String]
+
     private def participants: List[String] = _participants
+
     private def participants_=(newVal: List[String]): Unit = {
       if (_participants.size != newVal.size) {
         winner = None
@@ -80,7 +83,9 @@ object RaffleServer {
 
     // Current winner
     private var _winner: Option[String] = None
+
     private def winner: Option[String] = _winner
+
     private def winner_=(newVal: Option[String]): Unit = {
       _winner = newVal
       broadcast(Winner(_winner))
@@ -167,7 +172,9 @@ object RaffleServer {
       *
       * @param msg message
       */
-    def broadcast(msg: Any): Unit = sessions.keys foreach { _ ! msg }
+    def broadcast(msg: Any): Unit = sessions.keys foreach {
+      _ ! msg
+    }
 
   }
 

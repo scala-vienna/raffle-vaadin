@@ -1,17 +1,18 @@
 package org.scala_vienna.raffle
 
 import akka.actor.ActorRef
-import org.scala_vienna.raffle.RaffleServer._
-import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
-import org.vaadin.addons.vaactor.VaactorUI
 import com.vaadin.data.provider.{DataProvider, ListDataProvider}
 import com.vaadin.event.{FieldEvents, ShortcutAction, ShortcutListener}
 import com.vaadin.server.{ExternalResource, Sizeable}
 import com.vaadin.shared.Registration
 import com.vaadin.shared.ui.ContentMode
-import com.vaadin.ui.themes.ValoTheme
 import com.vaadin.ui._
+import com.vaadin.ui.themes.ValoTheme
+import org.scala_vienna.raffle.RaffleServer._
 import org.scala_vienna.raffle.Session.RegisterUI
+import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
+import org.vaadin.addons.vaactor.VaactorUI
+
 import scala.collection.JavaConverters._
 
 
@@ -64,7 +65,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     }
   })
 
-  val leaveButton = new Button("Leave Raffle", _ => { RaffleServer.raffleServer ! Leave(sessionActor) })
+  val leaveButton = new Button("Leave Raffle", _ => {
+    RaffleServer.raffleServer ! Leave(sessionActor)
+  })
   leaveButton.setVisible(false)
 
   val enterPanel: HorizontalLayout = new HorizontalLayout {
@@ -85,7 +88,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     addColumn(s => s).setCaption("Participants:")
   }
 
-  val startButton = new Button("Start", _ => { RaffleServer.raffleServer ! StartRaffle })
+  val startButton = new Button("Start", _ => {
+    RaffleServer.raffleServer ! StartRaffle
+  })
   startButton.setVisible(false)
   startButton.setEnabled(false)
 
@@ -99,7 +104,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
   removeButton.setVisible(false)
   removeButton.setEnabled(false)
 
-  val removeAllButton = new Button("Remove All", _ => { RaffleServer.raffleServer ! RemoveAll })
+  val removeAllButton = new Button("Remove All", _ => {
+    RaffleServer.raffleServer ! RemoveAll
+  })
   removeAllButton.setVisible(false)
   removeAllButton.setEnabled(false)
 

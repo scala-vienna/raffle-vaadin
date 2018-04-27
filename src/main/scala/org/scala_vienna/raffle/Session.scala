@@ -6,7 +6,9 @@ import org.scala_vienna.raffle.Session.RegisterUI
 import org.vaadin.addons.vaactor.VaactorSession
 
 object Session {
+
   case object RegisterUI
+
 }
 
 class Session extends Actor with VaactorSession[SessionState.State] {
@@ -22,7 +24,7 @@ class Session extends Actor with VaactorSession[SessionState.State] {
     case newState: SessionState.State =>
       sessionState = newState
       broadcast(sessionState)
-    case msg @ (Winner(_) | Participants(_)) =>
+    case msg@(Winner(_) | Participants(_)) =>
       broadcast(msg)
     case RegisterUI =>
       uis += sender
@@ -35,5 +37,7 @@ class Session extends Actor with VaactorSession[SessionState.State] {
     *
     * @param msg message
     */
-  def broadcast(msg: Any): Unit = uis foreach { _ ! msg }
+  def broadcast(msg: Any): Unit = uis foreach {
+    _ ! msg
+  }
 }
