@@ -37,7 +37,9 @@ object RaffleServer {
   /** Coordinator wants to remove all participants, processed by server */
   case object RemoveAll
 
-  case object RegisterSession
+  case object SubscribeSession
+
+  case object UnsubscribeSession
 
   /** The winner is... or no winner yet, sent by server or session */
   case class Winner(name: Option[String])
@@ -144,15 +146,12 @@ object RaffleServer {
             updateState(session, SessionState.None)
           }
         }
-
         participants = List.empty[String]
+
       // Session wants to register (for listening to messages broadcasted by the server)
-      case RegisterSession =>
-        if (!sessions.contains(sender)) {
-          sessions += (sender -> SessionState.None)
-        }
-        sender ! Participants(participants)
-        sender ! Winner(winner)
+      case SubscribeSession => if (!sessions.contains(sender)) sessions += (sender -> SessionState.None)
+
+      case UnsubscribeSession => if (sessions.contains(sender)) sessions -= sender
 
       case GetParticipants => sender ! Participants(participants)
 
