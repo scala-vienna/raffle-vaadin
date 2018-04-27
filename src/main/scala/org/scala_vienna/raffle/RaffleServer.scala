@@ -47,17 +47,11 @@ object RaffleServer {
 
   case class Error(error: String)
 
-  /** Someone wants to know the current list of particpants
-    *
-    * @param ui UI ActorRef to send the info to, processed by server
-    */
-  case class GetParticipants(ui: ActorRef)
+  /** Someone wants to know the current list of particpants */
+  case object GetParticipants
 
-  /** Someone wants to know the current winner
-    *
-    * @param ui UI ActorRef to send the info to, processed by server
-    */
-  case class GetWinner(ui: ActorRef)
+  /** Someone wants to know the current winner */
+  case object GetWinner
 
   /** ActoRef of raffle actor */
   val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
@@ -160,9 +154,9 @@ object RaffleServer {
         sender ! Participants(participants)
         sender ! Winner(winner)
 
-      case GetParticipants(ui) => ui ! Participants(participants)
+      case GetParticipants => sender ! Participants(participants)
 
-      case GetWinner(ui) => ui ! Winner(winner)
+      case GetWinner => sender ! Winner(winner)
     }
 
     private def updateState(session: ActorRef, newState: SessionState.State): Unit = {

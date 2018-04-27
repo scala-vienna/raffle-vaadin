@@ -9,14 +9,16 @@ import com.vaadin.shared.ui.ContentMode
 import com.vaadin.ui._
 import com.vaadin.ui.themes.ValoTheme
 import org.scala_vienna.raffle.RaffleServer._
-import org.scala_vienna.raffle.Session.RegisterUI
-import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
+import org.vaadin.addons.vaactor.Vaactor.{SubscribeSession, VaactorComponent}
+import org.vaadin.addons.vaactor.VaactorSession.RequestSessionState
 import org.vaadin.addons.vaactor.VaactorUI
 
 import scala.collection.JavaConverters._
 
 
-class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionActor: ActorRef) extends CustomComponent with VaactorComponent {
+class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionActor: ActorRef)
+  extends CustomComponent with VaactorComponent with SubscribeSession {
+
   /** This component's name if participating */
   var myName: Option[String] = None
 
@@ -132,7 +134,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
       footer)
   })
 
-  sessionActor ! RegisterUI
+  sessionActor ! RequestSessionState
+  RaffleServer.raffleServer ! GetParticipants
+  RaffleServer.raffleServer ! GetWinner
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */
   override def receive: PartialFunction[Any, Unit] = {
