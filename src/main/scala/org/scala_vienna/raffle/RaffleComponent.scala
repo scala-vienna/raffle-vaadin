@@ -29,22 +29,22 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
   val participantName = new TextField("Name:")
   participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
 
-  val enterListener = new ShortcutListener("Submit", ShortcutAction.KeyCode.ENTER, Array.empty[Int]: _*) {
+  val enterListener: ShortcutListener = new ShortcutListener("Submit", ShortcutAction.KeyCode.ENTER, Array.empty[Int]: _*) {
     override def handleAction(sender: scala.Any, target: scala.Any): Unit = {
       enterButton.click()
     }
   }
 
-  private var registration: Registration = null
+  private var registration: Registration = _
 
-  participantName.addBlurListener((event: FieldEvents.BlurEvent) => {
+  participantName.addBlurListener((_: FieldEvents.BlurEvent) => {
     if (registration != null) {
       registration.remove()
       registration = null
     }
   })
 
-  participantName.addFocusListener((event: FieldEvents.FocusEvent) => {
+  participantName.addFocusListener((_: FieldEvents.FocusEvent) => {
     if (registration == null) {
       registration = participantName.addShortcutListener(enterListener)
     }
@@ -111,7 +111,7 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
   removeAllButton.setEnabled(false)
 
   val winnerCaption = "Winner:"
-  val noWinnerCaption = winnerCaption + " -"
+  val noWinnerCaption: String = winnerCaption + " -"
 
   val winnerLabel: Label = new Label {
     setValue(noWinnerCaption)
@@ -179,9 +179,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
       participantsList.addAll(participants.asJava)
       participantsDataProvider.refreshAll()
 
-      startButton.setEnabled(participants.size > 0)
-      removeButton.setEnabled(participants.size > 0)
-      removeAllButton.setEnabled(participants.size > 0)
+      startButton.setEnabled(participants.nonEmpty)
+      removeButton.setEnabled(participants.nonEmpty)
+      removeAllButton.setEnabled(participants.nonEmpty)
 
     case Error(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)

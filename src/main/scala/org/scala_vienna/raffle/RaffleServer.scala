@@ -65,9 +65,11 @@ object RaffleServer {
   /** Actor handling Raffle server */
   class ServerActor extends Actor {
 
+    //noinspection ActorMutableStateInspection
     // Current sessions with their state
     private var sessions = Map.empty[ActorRef, SessionState.State]
 
+    //noinspection ActorMutableStateInspection
     // Current participants
     private var _participants = List.empty[String]
 
@@ -81,6 +83,7 @@ object RaffleServer {
       broadcast(Participants(_participants))
     }
 
+    //noinspection ActorMutableStateInspection
     // Current winner
     private var _winner: Option[String] = None
 
@@ -106,7 +109,7 @@ object RaffleServer {
           participants :+= name
           updateState(session, SessionState.Participating(name))
         }
-      case Coordinate(session) => {
+      case Coordinate(session) =>
         if (sessions.values.toSeq.contains(SessionState.Coordinator)) {
           sender ! Error(s"A coordinator is already active.")
         } else {
@@ -117,7 +120,6 @@ object RaffleServer {
               sender ! Error("Session cannot be coordinator because it is unkown/participating/coordinator.")
           }
         }
-      }
       case Leave(session) =>
         sessions.get(session) match {
           case Some(SessionState.Participating(name)) =>
@@ -129,7 +131,7 @@ object RaffleServer {
             sender ! Error("Cannot leave raffle. Not participating.")
         }
       case StartRaffle =>
-        if (participants.size > 0) {
+        if (participants.nonEmpty) {
           val winnerIndex = Random.nextInt(participants.size)
           winner = Some(participants(winnerIndex))
         }

@@ -13,6 +13,7 @@ object Session {
 
 class Session extends Actor with VaactorSession[SessionState.State] {
 
+  //noinspection ActorMutableStateInspection
   // List of UIs of this session
   private var uis = Set.empty[ActorRef]
 
