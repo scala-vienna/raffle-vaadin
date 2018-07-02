@@ -1,20 +1,12 @@
 package org.scala_vienna.raffle
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.Actor
 import org.scala_vienna.raffle.RaffleServer._
-import org.scala_vienna.raffle.Session.RegisterUI
 import org.vaadin.addons.vaactor.VaactorSession
-
-object Session {
-  case object RegisterUI
-}
 
 class Session extends Actor with VaactorSession[SessionState.State] {
 
-  // List of UIs of this session
-  private var uis = Set.empty[ActorRef]
-
-  RaffleServer.raffleServer ! RegisterSession
+  RaffleServer.raffleServer ! SubscribeSession
 
   override val initialSessionState: SessionState.State = SessionState.None
 
@@ -22,18 +14,10 @@ class Session extends Actor with VaactorSession[SessionState.State] {
     case newState: SessionState.State =>
       sessionState = newState
       broadcast(sessionState)
-    case msg @ (Winner(_) | Participants(_)) =>
+    case msg@(Winner(_) | Participants(_)) =>
       broadcast(msg)
-    case RegisterUI =>
-      uis += sender
-      sender ! sessionState
-      RaffleServer.raffleServer ! GetParticipants(sender)
-      RaffleServer.raffleServer ! GetWinner(sender)
   }
 
-  /** Send message to every UI
-    *
-    * @param msg message
-    */
-  def broadcast(msg: Any): Unit = uis foreach { _ ! msg }
+  override def postStop(): Unit = RaffleServer.raffleServer ! UnsubscribeSession
+
 }

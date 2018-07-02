@@ -1,21 +1,24 @@
 package org.scala_vienna.raffle
 
 import akka.actor.ActorRef
-import org.scala_vienna.raffle.RaffleServer._
-import org.vaadin.addons.vaactor.Vaactor.VaactorComponent
-import org.vaadin.addons.vaactor.VaactorUI
 import com.vaadin.data.provider.{DataProvider, ListDataProvider}
 import com.vaadin.event.{FieldEvents, ShortcutAction, ShortcutListener}
 import com.vaadin.server.{ExternalResource, Sizeable}
 import com.vaadin.shared.Registration
 import com.vaadin.shared.ui.ContentMode
-import com.vaadin.ui.themes.ValoTheme
 import com.vaadin.ui._
-import org.scala_vienna.raffle.Session.RegisterUI
+import com.vaadin.ui.themes.ValoTheme
+import org.scala_vienna.raffle.RaffleServer._
+import org.vaadin.addons.vaactor.Vaactor.{SubscribeSession, VaactorComponent}
+import org.vaadin.addons.vaactor.VaactorSession.RequestSessionState
+import org.vaadin.addons.vaactor.VaactorUI
+
 import scala.collection.JavaConverters._
 
 
-class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionActor: ActorRef) extends CustomComponent with VaactorComponent {
+class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionActor: ActorRef)
+  extends CustomComponent with VaactorComponent with SubscribeSession {
+
   /** This component's name if participating */
   var myName: Option[String] = None
 
@@ -28,25 +31,22 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
   val participantName = new TextField("Name:")
   participantName.setWidth(participantWidth, Sizeable.Unit.PIXELS)
 
-  val enterListener = new ShortcutListener("Submit", ShortcutAction.KeyCode.ENTER, Array.empty[Int]: _*) {
+  val enterListener: ShortcutListener = new ShortcutListener("Submit", ShortcutAction.KeyCode.ENTER, Array.empty[Int]: _*) {
     override def handleAction(sender: scala.Any, target: scala.Any): Unit = {
       enterButton.click()
     }
   }
 
-  private var registration: Registration = null
+  private var registration: Option[Registration] = None
 
-  participantName.addBlurListener((event: FieldEvents.BlurEvent) => {
-    if (registration != null) {
-      registration.remove()
-      registration = null
-    }
+  participantName.addBlurListener((_: FieldEvents.BlurEvent) => {
+    for (r <- registration) r.remove()
+    registration = None
   })
 
-  participantName.addFocusListener((event: FieldEvents.FocusEvent) => {
-    if (registration == null) {
-      registration = participantName.addShortcutListener(enterListener)
-    }
+  participantName.addFocusListener((_: FieldEvents.FocusEvent) => {
+    if (registration.isEmpty)
+      registration = Some(participantName.addShortcutListener(enterListener))
   })
 
   participantName.focus()
@@ -64,7 +64,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     }
   })
 
-  val leaveButton = new Button("Leave Raffle", _ => { RaffleServer.raffleServer ! Leave(sessionActor) })
+  val leaveButton = new Button("Leave Raffle", _ => {
+    RaffleServer.raffleServer ! Leave(sessionActor)
+  })
   leaveButton.setVisible(false)
 
   val enterPanel: HorizontalLayout = new HorizontalLayout {
@@ -85,7 +87,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
     addColumn(s => s).setCaption("Participants:")
   }
 
-  val startButton = new Button("Start", _ => { RaffleServer.raffleServer ! StartRaffle })
+  val startButton = new Button("Start", _ => {
+    RaffleServer.raffleServer ! StartRaffle
+  })
   startButton.setVisible(false)
   startButton.setEnabled(false)
 
@@ -99,12 +103,14 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
   removeButton.setVisible(false)
   removeButton.setEnabled(false)
 
-  val removeAllButton = new Button("Remove All", _ => { RaffleServer.raffleServer ! RemoveAll })
+  val removeAllButton = new Button("Remove All", _ => {
+    RaffleServer.raffleServer ! RemoveAll
+  })
   removeAllButton.setVisible(false)
   removeAllButton.setEnabled(false)
 
   val winnerCaption = "Winner:"
-  val noWinnerCaption = winnerCaption + " -"
+  val noWinnerCaption: String = winnerCaption + " -"
 
   val winnerLabel: Label = new Label {
     setValue(noWinnerCaption)
@@ -128,7 +134,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
       footer)
   })
 
-  sessionActor ! RegisterUI
+  sessionActor ! RequestSessionState
+  RaffleServer.raffleServer ! GetParticipants
+  RaffleServer.raffleServer ! GetWinner
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */
   override def receive: PartialFunction[Any, Unit] = {
@@ -172,9 +180,9 @@ class RaffleComponent(override val vaactorUI: VaactorUI, title: String, sessionA
       participantsList.addAll(participants.asJava)
       participantsDataProvider.refreshAll()
 
-      startButton.setEnabled(participants.size > 0)
-      removeButton.setEnabled(participants.size > 0)
-      removeAllButton.setEnabled(participants.size > 0)
+      startButton.setEnabled(participants.nonEmpty)
+      removeButton.setEnabled(participants.nonEmpty)
+      removeAllButton.setEnabled(participants.nonEmpty)
 
     case Error(error) =>
       Notification.show(error, Notification.Type.WARNING_MESSAGE)
