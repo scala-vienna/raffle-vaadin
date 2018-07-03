@@ -1,18 +1,24 @@
 package org.scala_vienna.raffle
 
-import com.vaadin.annotations.Push
-import com.vaadin.server.VaadinRequest
-import com.vaadin.shared.communication.PushMode
-import com.vaadin.shared.ui.ui.Transport
-import org.vaadin.addons.vaactor.VaactorUI
+import com.vaadin.flow.component.orderedlayout.VerticalLayout
+import com.vaadin.flow.component.page.Push
+import com.vaadin.flow.router.Route
+import com.vaadin.flow.shared.communication.PushMode
+import com.vaadin.flow.shared.ui.Transport
+import com.vaadin.flow.theme.Theme
+import com.vaadin.flow.theme.lumo.Lumo
 
 @Push(
   value = PushMode.AUTOMATIC,
   transport = Transport.WEBSOCKET
 )
-class RaffleUI extends VaactorUI {
+@Route("")
+@Theme(
+  value = classOf[Lumo],
+  variant = Lumo.DARK
+)
+class RaffleUI extends VerticalLayout {
 
-  override def init(request: VaadinRequest): Unit =
-    setContent(new RaffleComponent(this, "Vaactor Raffle", sessionActor))
+  add(new RaffleComponent("Vaactor Raffle"))
 
 }
