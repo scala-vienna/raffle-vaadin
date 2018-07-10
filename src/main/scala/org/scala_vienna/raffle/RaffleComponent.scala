@@ -1,5 +1,6 @@
 package org.scala_vienna.raffle
 
+import akka.actor.Actor.Receive
 import com.vaadin.flow.component.AttachEvent
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.{Anchor, H1, H2, Label}
@@ -87,7 +88,7 @@ class RaffleComponent(title: String)
   }
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */
-  override def receive: PartialFunction[Any, Unit] = {
+  override def receive: Receive = {
     case SessionState.Participating(name) =>
       enterButton.setVisible(false)
       leaveButton.setVisible(true)

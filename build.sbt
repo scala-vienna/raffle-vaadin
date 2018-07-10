@@ -10,8 +10,10 @@ resolvers ++= Seq(
 
 val vaadinVersion = "10.0.1"
 val akkaVersion = "2.5.13"
+val vaactorVersion = "2.0.0"
+
 libraryDependencies ++= Seq(
-//  "org.vaadin.addons" % "vaactor" % "1.0.2",
+  "org.vaadin.addons" % "vaactor" % vaactorVersion,
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
   "com.vaadin" % "vaadin-core" % vaadinVersion,
   "com.typesafe.akka" %% "akka-actor" % akkaVersion
