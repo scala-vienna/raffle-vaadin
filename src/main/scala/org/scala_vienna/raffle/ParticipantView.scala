@@ -47,7 +47,7 @@ class ParticipantView extends VerticalLayout
       case r: Manager.Raffle =>
         raffle.value = r
         title.setText(s"Vaactor Raffle ${raffle.value.id}")
-        add(new RaffleComponent(raffle.value))
+        add(new ParticipantComponent(raffle.value))
       case Manager.Error(msg) =>
         Notification.show(msg)
         ui.navigate("")

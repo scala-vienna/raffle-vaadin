@@ -14,7 +14,7 @@ import org.vaadin.addons.vaactor.{Vaactor, VaactorSession}
 
 import scala.collection.JavaConverters._
 
-class RaffleComponent(raffle: Manager.Raffle)
+class ParticipantComponent(raffle: Manager.Raffle)
   extends VerticalLayout with Vaactor.HasActor with Vaactor.SubscribeSession {
 
   /** Contains list of raffle participants */
