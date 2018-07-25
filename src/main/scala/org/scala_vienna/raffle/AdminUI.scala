@@ -1,5 +1,6 @@
 package org.scala_vienna.raffle
 
+import com.vaadin.flow.component.html.Label
 import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.page.Push
 import com.vaadin.flow.router.Route
@@ -12,13 +13,13 @@ import com.vaadin.flow.theme.lumo.Lumo
   value = PushMode.AUTOMATIC,
   transport = Transport.WEBSOCKET
 )
-@Route("")
+@Route("admin")
 @Theme(
   value = classOf[Lumo],
   variant = Lumo.DARK
 )
-class RaffleUI extends VerticalLayout {
+class AdminUI extends VerticalLayout {
 
-  add(new RaffleComponent("Vaactor Raffle"))
+  add(new Label("Hi, I'm the admin UI!"))
 
 }
