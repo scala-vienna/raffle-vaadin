@@ -27,7 +27,7 @@ import org.vaadin.addons.vaactor.Vaactor
 class AdminView extends VerticalLayout
   with HasUrlParameter[String] with Vaactor.HasActor {
 
-  val raffleId: DelayedValue[String] = DelayedValue[String]
+  val raffleKey: DelayedValue[String] = DelayedValue[String]
   val raffle: DelayedValue[Manager.Raffle] = DelayedValue[Manager.Raffle]
 
   val title = new H1()
@@ -37,11 +37,11 @@ class AdminView extends VerticalLayout
     new Button("Close raffle", { _ => Manager ! Manager.Close(raffle.value.id) })
   )
 
-  override def setParameter(event: BeforeEvent, parameter: String): Unit = raffleId.value = parameter
+  override def setParameter(event: BeforeEvent, parameter: String): Unit = raffleKey.value = parameter
 
   override def onAttach(attachEvent: AttachEvent): Unit = {
     super.onAttach(attachEvent)
-    Manager ! Manager.Lookup(raffleId.value) // must no receive anything before attach
+    Manager ! Manager.LookupKey(raffleKey.value) // must no receive anything before attach
   }
 
   private def processManager(reply: Manager.Reply): Unit = reply match {

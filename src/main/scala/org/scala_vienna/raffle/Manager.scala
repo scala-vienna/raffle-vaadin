@@ -1,5 +1,7 @@
 package org.scala_vienna.raffle
 
+import java.util.UUID
+
 import akka.actor.{Actor, ActorRef, Props}
 import org.vaadin.addons.vaactor.{VaactorServlet, loadedConfig}
 
@@ -15,6 +17,8 @@ object Manager {
 
   case class Lookup(id: String) extends Command
 
+  case class LookupKey(key: String) extends Command
+
   case class Close(id: String) extends Command
 
   sealed trait Reply
@@ -27,6 +31,8 @@ object Manager {
 
   case class Error(msg: String) extends Reply
 
+  case class RaffleWithKey(raffle: Raffle, key: String)
+
   val actor: ActorRef = VaactorServlet.system.actorOf(Props[ManagerActor],
     loadedConfig.getString("raffle.manager-name"))
 
@@ -36,33 +42,55 @@ object Manager {
 
     //noinspection ActorMutableStateInspection
     // active raffles
-    private var raffles = Map.empty[String, Raffle]
+    private var rafflesById = Map.empty[String, RaffleWithKey]
+
+    //noinspection ActorMutableStateInspection
+    // active raffles with key
+    private var rafflesByKey = Map.empty[String, RaffleWithKey]
 
     @tailrec
     private def unusedId(): String = {
       val id = createId()
-      if (!(raffles contains id))
+      if (!(rafflesById contains id))
         id
       else
         unusedId()
     }
 
+    def createRaffle(): RaffleWithKey = {
+      val id = unusedId()
+      val key = UUID.randomUUID().toString
+      val actor = context.actorOf(Props[RaffleServer.ServerActor], s"raffle-$id")
+      val raffle = Raffle(id, actor)
+      val raffleWithKey = RaffleWithKey(raffle, key)
+      rafflesById += (id -> raffleWithKey)
+      rafflesByKey += (key -> raffleWithKey)
+      raffleWithKey
+    }
+
+    def closeRaffle(id: String): Unit =
+      for (r <- rafflesById.get(id)) {
+        rafflesById -= r.raffle.id
+        rafflesByKey -= r.key
+      }
+
     override def receive: Receive = {
       case command: Command => command match {
         case Create =>
-          val id = unusedId()
-          val actor = context.actorOf(Props[RaffleServer.ServerActor], s"raffle-$id")
-          val raffle = Raffle(id, actor)
-          raffles += (id -> raffle)
-          sender ! raffle
+          sender ! createRaffle()
         case Lookup(id) =>
-          raffles.get(id) match {
-            case Some(raffle) => sender ! raffle
+          rafflesById.get(id) match {
+            case Some(raffleWithKey) => sender ! raffleWithKey.raffle
             case None => sender ! Error(s"no raffle with id $id active")
+          }
+        case LookupKey(key) =>
+          rafflesByKey.get(key) match {
+            case Some(raffleWithKey) => sender ! raffleWithKey.raffle
+            case None => sender ! Error(s"no raffle with key $key active")
           }
         case Close(id) =>
           // todo - send Shutdown to RaffleServer
-          raffles -= id
+          closeRaffle(id)
           sender ! Closed(id)
       }
     }
