@@ -15,13 +15,15 @@ object Manager {
 
   case class Lookup(id: String) extends Command
 
-  case class Delete(id: String) extends Command
+  case class Close(id: String) extends Command
 
   sealed trait Reply
 
   case class Raffle(id: String, actor: ActorRef) extends Reply {
     def !(msg: Any)(implicit sender: ActorRef): Unit = actor.tell(msg, sender)
   }
+
+  case class Closed(id: String) extends Reply
 
   case class Error(msg: String) extends Reply
 
@@ -58,9 +60,10 @@ object Manager {
             case Some(raffle) => sender ! raffle
             case None => sender ! Error(s"no raffle with id $id active")
           }
-        case Delete(id) =>
+        case Close(id) =>
           // todo - send Shutdown to RaffleServer
           raffles -= id
+          sender ! Closed(id)
       }
     }
 

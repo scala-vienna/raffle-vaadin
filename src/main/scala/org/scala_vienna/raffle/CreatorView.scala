@@ -33,10 +33,10 @@ class CreatorView extends VerticalLayout with Vaactor.HasActor {
   override def receive: Receive = {
     case reply: Manager.Reply => reply match {
       case raffle: Manager.Raffle =>
-        removeAll()
-        add(new AdminView(raffle))
+        ui.navigate(s"admin/${raffle.id}")
       case Manager.Error(msg) =>
         Notification.show(msg)
+      case Manager.Closed(_) =>
     }
   }
 
