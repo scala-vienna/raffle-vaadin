@@ -12,7 +12,7 @@ import com.vaadin.flow.theme.lumo.Lumo
   value = PushMode.AUTOMATIC,
   transport = Transport.WEBSOCKET
 )
-@Route("")
+@Route("dummy")
 @Theme(
   value = classOf[Lumo],
   variant = Lumo.DARK
