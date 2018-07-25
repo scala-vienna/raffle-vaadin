@@ -3,7 +3,7 @@ package org.scala_vienna.raffle
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.AttachEvent
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.{Anchor, H1, H2, Label}
+import com.vaadin.flow.component.html.{Anchor, H2, Label}
 import com.vaadin.flow.component.listbox.ListBox
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
@@ -14,7 +14,7 @@ import org.vaadin.addons.vaactor.{Vaactor, VaactorSession}
 
 import scala.collection.JavaConverters._
 
-class RaffleComponent(title: String)
+class RaffleComponent(raffle: Manager.Raffle)
   extends VerticalLayout with Vaactor.HasActor with Vaactor.SubscribeSession {
 
   /** Contains list of raffle participants */
@@ -31,12 +31,12 @@ class RaffleComponent(title: String)
 
   val enterButton = new Button("Enter Raffle", _ =>
     if (participantName.getValue == "raffle2018coord")
-      RaffleServer.raffleServer ! Coordinate(session)
+      raffle ! Coordinate(session)
     else
-      RaffleServer.raffleServer ! Participate(participantName.getValue, session)
+      raffle ! Participate(participantName.getValue, session)
   )
 
-  val leaveButton = new Button("Leave Raffle", _ => RaffleServer.raffleServer ! Leave(session))
+  val leaveButton = new Button("Leave Raffle", _ => raffle ! Leave(session))
   leaveButton.setVisible(false)
 
   val enterPanel = new HorizontalLayout(
@@ -49,15 +49,15 @@ class RaffleComponent(title: String)
   val participantsPanel = new ListBox[String]()
   participantsPanel.setDataProvider(participantsDataProvider)
 
-  val startButton = new Button("Start", _ => RaffleServer.raffleServer ! StartRaffle)
+  val startButton = new Button("Start", _ => raffle ! StartRaffle)
   startButton.setVisible(false)
   startButton.setEnabled(false)
 
-  val removeButton = new Button("Remove", _ => RaffleServer.raffleServer ! Remove(participantsPanel.getValue))
+  val removeButton = new Button("Remove", _ => raffle ! Remove(participantsPanel.getValue))
   removeButton.setVisible(false)
   removeButton.setEnabled(false)
 
-  val removeAllButton = new Button("Remove All", _ => RaffleServer.raffleServer ! RemoveAll)
+  val removeAllButton = new Button("Remove All", _ => raffle ! RemoveAll)
   removeAllButton.setVisible(false)
   removeAllButton.setEnabled(false)
 
@@ -69,7 +69,6 @@ class RaffleComponent(title: String)
   val footer = new Anchor("https://github.com/scala-vienna/vaadin-raffle", "Source code (GitHub)")
 
   add(
-    new H1(title),
     enterPanel,
     participantsPanel,
     startButton,
@@ -79,12 +78,14 @@ class RaffleComponent(title: String)
     footer
   )
 
+
   // MUST NOT access session or receive messages before attach!
   override def onAttach(attachEvent: AttachEvent): Unit = {
     super.onAttach(attachEvent)
+    session ! raffle // tell session the raffle to subscribe
     session ! VaactorSession.RequestSessionState
-    RaffleServer.raffleServer ! GetParticipants
-    RaffleServer.raffleServer ! GetWinner
+    raffle ! GetParticipants
+    raffle ! GetWinner
   }
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */

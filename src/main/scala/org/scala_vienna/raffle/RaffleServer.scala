@@ -1,7 +1,6 @@
 package org.scala_vienna.raffle
 
-import akka.actor.{Actor, ActorRef, Props}
-import org.vaadin.addons.vaactor.VaactorServlet
+import akka.actor.{Actor, ActorRef}
 
 import scala.util.Random
 
@@ -54,9 +53,6 @@ object RaffleServer {
 
   /** Someone wants to know the current winner */
   case object GetWinner
-
-  /** ActoRef of raffle actor */
-  val raffleServer: ActorRef = VaactorServlet.system.actorOf(Props[ServerActor], "raffleServer")
 
   /** Actor handling Raffle server */
   class ServerActor extends Actor {

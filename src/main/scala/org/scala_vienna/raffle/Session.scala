@@ -6,7 +6,7 @@ import org.vaadin.addons.vaactor.VaactorSession
 
 class Session extends Actor with VaactorSession[SessionState.State] {
 
-  RaffleServer.raffleServer ! SubscribeSession
+  private var raffle: Option[Manager.Raffle] = None
 
   override val initialSessionState: SessionState.State = SessionState.None
 
@@ -16,8 +16,11 @@ class Session extends Actor with VaactorSession[SessionState.State] {
       broadcast(sessionState)
     case msg@(Winner(_) | Participants(_)) =>
       broadcast(msg)
+    case r: Manager.Raffle =>
+      raffle = Some(r)
+      r ! SubscribeSession
   }
 
-  override def postStop(): Unit = RaffleServer.raffleServer ! UnsubscribeSession
+  override def postStop(): Unit = for (r <- raffle) r ! UnsubscribeSession
 
 }
