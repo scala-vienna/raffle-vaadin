@@ -30,10 +30,13 @@ class ParticipantComponent(raffle: Manager.Raffle)
   participantNameLabel.setVisible(false)
 
   val enterButton = new Button("Enter Raffle", _ =>
-    raffle ! Participate(participantName.getValue, session)
+    raffle ! Participate(participantName.getValue)
   )
 
-  val leaveButton = new Button("Leave Raffle", _ => raffle ! Leave(session))
+  val leaveButton = new Button("Leave Raffle", { _ =>
+    raffle ! Leave(participantName.getValue)
+    // todo - use name from Session, clear name in session
+  })
   leaveButton.setVisible(false)
 
   val enterPanel = new HorizontalLayout(

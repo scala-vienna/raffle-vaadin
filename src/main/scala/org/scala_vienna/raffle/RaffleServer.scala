@@ -1,6 +1,7 @@
 package org.scala_vienna.raffle
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.Actor
+import org.vaadin.addons.vaactor.VaactorSession
 
 import scala.util.Random
 
@@ -10,13 +11,13 @@ object RaffleServer {
     *
     * @param name name of new participant
     */
-  case class Participate(name: String, session: ActorRef)
+  case class Participate(name: String)
 
   /** Client wants to stop participating or being coordinator
     *
-    * @param session session ActorRef of client, processed by server
+    * @param name name of leaving participant
     */
-  case class Leave(session: ActorRef)
+  case class Leave(name: String)
 
   /** Client wants to start the Raffle, processed by server */
   case object StartRaffle
@@ -29,10 +30,6 @@ object RaffleServer {
 
   /** Coordinator wants to remove all participants, processed by server */
   case object RemoveAll
-
-  case object SubscribeSession
-
-  case object UnsubscribeSession
 
   /** The winner is... or no winner yet, sent by server or session */
   case class Winner(name: Option[String])
@@ -49,11 +46,9 @@ object RaffleServer {
   case object GetWinner
 
   /** Actor handling Raffle server */
-  class ServerActor extends Actor {
+  class ServerActor extends Actor with VaactorSession[Int] {
 
-    //noinspection ActorMutableStateInspection
-    // Current sessions with their state
-    private var sessions = Map.empty[ActorRef, SessionState.State]
+    override val initialSessionState: Int = 0
 
     //noinspection ActorMutableStateInspection
     // Current participants
@@ -81,9 +76,9 @@ object RaffleServer {
     }
 
     /** Process received messages */
-    def receive: Receive = {
+    override val sessionBehaviour: Receive = {
       // Session wants to participate
-      case Participate(name, session) =>
+      case Participate(name) =>
         // no name, reply with failure
         if (name.isEmpty)
           sender ! Error("Empty name not valid")
@@ -93,59 +88,25 @@ object RaffleServer {
         // add session to raffle, broadcast new participant list to sessions
         else {
           participants :+= name
-          updateState(session, SessionState.Participating(name))
+          // todo - updateState(session, SessionState.Participating(name))
         }
-      case Leave(session) =>
-        sessions.get(session) match {
-          case Some(SessionState.Participating(name)) =>
-            participants = participants.filter(_ != name)
-            updateState(session, SessionState.Listening)
-          case Some(SessionState.Listening) | None =>
-            sender ! Error("Cannot leave raffle. Not participating.")
-        }
+      case Leave(name) =>
+        participants = participants.filter(_ != name)
       case StartRaffle =>
         if (participants.nonEmpty) {
           val winnerIndex = Random.nextInt(participants.size)
           winner = Some(participants(winnerIndex))
         }
       case Remove(name) =>
-        val matchingSessions = sessions.collect {
-          case (session, SessionState.Participating(`name`)) => session
-        }
-        for (session <- matchingSessions) {
-          updateState(session, SessionState.Listening)
-        }
         participants = participants.filter(_ != name)
+      // todo - updateState(session, SessionState.Listening)
       case RemoveAll =>
-        val allSessions: Iterable[ActorRef] = sessions.keys
-        for (session <- allSessions) {
-          if (sessions(session).isInstanceOf[SessionState.Participating]) {
-            updateState(session, SessionState.Listening)
-          }
-        }
         participants = List.empty[String]
-
-      // Session wants to register (for listening to messages broadcasted by the server)
-      case SubscribeSession => if (!sessions.contains(sender)) sessions += (sender -> SessionState.Listening)
-
-      case UnsubscribeSession => if (sessions.contains(sender)) sessions -= sender
+      // todo - for all participants updateState(session, SessionState.Listening)
 
       case GetParticipants => sender ! Participants(participants)
 
       case GetWinner => sender ! Winner(winner)
-    }
-
-    private def updateState(session: ActorRef, newState: SessionState.State): Unit = {
-      sessions = sessions.updated(session, newState)
-      session ! newState
-    }
-
-    /** Send message to every session
-      *
-      * @param msg message
-      */
-    def broadcast(msg: Any): Unit = sessions.keys foreach {
-      _ ! msg
     }
 
   }

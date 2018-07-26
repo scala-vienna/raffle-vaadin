@@ -18,9 +18,9 @@ class Session extends Actor with VaactorSession[SessionState.State] {
       broadcast(msg)
     case r: Manager.Raffle =>
       raffle = Some(r)
-      r ! SubscribeSession
+      r ! VaactorSession.Subscribe
   }
 
-  override def postStop(): Unit = for (r <- raffle) r ! UnsubscribeSession
+  override def postStop(): Unit = for (r <- raffle) r ! VaactorSession.Unsubscribe
 
 }
