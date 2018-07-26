@@ -47,6 +47,10 @@ object RaffleServer {
 
     def names: List[String] = participants.keys.toList.sorted
 
+    def isEmpty: Boolean = participants.isEmpty
+
+    def nonEmpty: Boolean = participants.nonEmpty
+
   }
 
   /** Participant entered the raffle */

@@ -3,22 +3,14 @@ package org.scala_vienna.raffle
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.AttachEvent
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.{Anchor, H2, Label}
-import com.vaadin.flow.component.listbox.ListBox
+import com.vaadin.flow.component.html.{Anchor, Label}
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.data.provider.{DataProvider, ListDataProvider}
 import org.vaadin.addons.vaactor.Vaactor
-
-import scala.collection.JavaConverters._
 
 class ParticipantComponent extends VerticalLayout
   with Vaactor.HasActor with Vaactor.SubscribeSession {
-
-  /** Contains list of raffle participants */
-  val participantsList = new java.util.ArrayList[String]()
-  val participantsDataProvider: ListDataProvider[String] = DataProvider.ofCollection[String](participantsList)
 
   /** Contains participant name */
   val participantName = new TextField("Name:")
@@ -40,8 +32,7 @@ class ParticipantComponent extends VerticalLayout
     leaveButton
   )
 
-  val participantsPanel = new ListBox[String]()
-  participantsPanel.setDataProvider(participantsDataProvider)
+  val participantsPanel = new NamePanel()
 
   val startButton = new Button("Start", _ => session ! RaffleServer.SelectWinner)
   startButton.setVisible(false)
@@ -55,10 +46,7 @@ class ParticipantComponent extends VerticalLayout
   removeAllButton.setVisible(false)
   removeAllButton.setEnabled(false)
 
-  val winnerCaption = "Winner:"
-  val noWinnerCaption: String = winnerCaption + " -"
-
-  val winnerLabel = new H2(noWinnerCaption)
+  val winnerLabel = new WinnerPanel()
 
   val footer = new Anchor("https://github.com/scala-vienna/vaadin-raffle", "Source code (GitHub)")
 
@@ -80,20 +68,14 @@ class ParticipantComponent extends VerticalLayout
     session ! Session.RequestRaffleState
   }
 
-  /** Receive function, is called in context of VaadinUI (via ui.access) */
   override def receive: Receive = {
     case reply: RaffleServer.Reply => reply match {
-      case state@RaffleServer.State(participants, winner) =>
-        if (winner.isDefined)
-          winnerLabel.setText(s"$winnerCaption ${winner.get}")
-        else
-          winnerLabel.setText(noWinnerCaption)
-        participantsList.clear()
-        participantsList.addAll(state.names.asJava)
-        participantsDataProvider.refreshAll()
-        startButton.setEnabled(participants.nonEmpty)
-        removeButton.setEnabled(participants.nonEmpty)
-        removeAllButton.setEnabled(participants.nonEmpty)
+      case state: RaffleServer.State =>
+        winnerLabel.show(state.winner)
+        participantsPanel.show(state.names)
+        startButton.setEnabled(state.nonEmpty)
+        removeButton.setEnabled(state.nonEmpty)
+        removeAllButton.setEnabled(state.nonEmpty)
       case RaffleServer.Entered(name) =>
         enterButton.setVisible(false)
         leaveButton.setVisible(true)
