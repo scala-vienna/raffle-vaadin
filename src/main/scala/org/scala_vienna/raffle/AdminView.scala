@@ -14,7 +14,10 @@ import com.vaadin.flow.theme.Theme
 import com.vaadin.flow.theme.lumo.Lumo
 import org.vaadin.addons.vaactor.Vaactor
 
-/** View for administrator of a raffle */
+/** View for administrator of a raffle
+  *
+  * Activates a AdminComponent with the raffle reference.
+  */
 @Push(
   value = PushMode.AUTOMATIC,
   transport = Transport.WEBSOCKET
@@ -32,10 +35,7 @@ class AdminView extends VerticalLayout
 
   val title = new H1()
 
-  add(
-    title,
-    new Button("Close raffle", { _ => Manager ! Manager.Close(raffle.value.id) })
-  )
+  add(title)
 
   override def setParameter(event: BeforeEvent, parameter: String): Unit = raffleKey.value = parameter
 
@@ -48,6 +48,10 @@ class AdminView extends VerticalLayout
     case r: Manager.Raffle =>
       raffle.value = r
       title.setText(s"Vaactor Raffle ${raffle.value.id}")
+      add(
+        new AdminComponent(raffle.value),
+        new Button("Close raffle", { _ => Manager ! Manager.Close(raffle.value.id) })
+      )
     case Manager.Error(msg) =>
       Notification.show(msg)
       ui.navigate("")

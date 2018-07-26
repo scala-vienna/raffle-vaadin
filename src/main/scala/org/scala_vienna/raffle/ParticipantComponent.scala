@@ -9,6 +9,10 @@ import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout
 import com.vaadin.flow.component.textfield.TextField
 import org.vaadin.addons.vaactor.Vaactor
 
+/** Handles interaction of a human participant with the system.
+  *
+  * Communicates exclusive with the session actor.
+  */
 class ParticipantComponent extends VerticalLayout
   with Vaactor.HasActor with Vaactor.SubscribeSession {
 
@@ -34,18 +38,6 @@ class ParticipantComponent extends VerticalLayout
 
   val participantsPanel = new NamePanel()
 
-  val startButton = new Button("Start", _ => session ! RaffleServer.SelectWinner)
-  startButton.setVisible(false)
-  startButton.setEnabled(false)
-
-  val removeButton = new Button("Remove", _ => session ! RaffleServer.Leave(participantsPanel.getValue))
-  removeButton.setVisible(false)
-  removeButton.setEnabled(false)
-
-  val removeAllButton = new Button("Remove All", _ => session ! RaffleServer.Clear)
-  removeAllButton.setVisible(false)
-  removeAllButton.setEnabled(false)
-
   val winnerLabel = new WinnerPanel()
 
   val footer = new Anchor("https://github.com/scala-vienna/vaadin-raffle", "Source code (GitHub)")
@@ -53,13 +45,9 @@ class ParticipantComponent extends VerticalLayout
   add(
     enterPanel,
     participantsPanel,
-    startButton,
-    removeButton,
-    removeAllButton,
     winnerLabel,
     footer
   )
-
 
   // MUST NOT access session or receive messages before attach!
   override def onAttach(attachEvent: AttachEvent): Unit = {
@@ -73,9 +61,6 @@ class ParticipantComponent extends VerticalLayout
       case state: RaffleServer.State =>
         winnerLabel.show(state.winner)
         participantsPanel.show(state.names)
-        startButton.setEnabled(state.nonEmpty)
-        removeButton.setEnabled(state.nonEmpty)
-        removeAllButton.setEnabled(state.nonEmpty)
       case RaffleServer.Entered(name) =>
         enterButton.setVisible(false)
         leaveButton.setVisible(true)
@@ -87,9 +72,6 @@ class ParticipantComponent extends VerticalLayout
         leaveButton.setVisible(false)
         participantName.setVisible(true)
         participantNameLabel.setVisible(false)
-        startButton.setVisible(false)
-        removeButton.setVisible(false)
-        removeAllButton.setVisible(false)
       case RaffleServer.Error(error) =>
         Notification.show(error)
     }

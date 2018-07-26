@@ -13,7 +13,10 @@ import com.vaadin.flow.theme.Theme
 import com.vaadin.flow.theme.lumo.Lumo
 import org.vaadin.addons.vaactor.Vaactor
 
-/** View for participant of a raffle */
+/** View for participant of a raffle.
+  *
+  * Initializes the session actor with the raffle reference and activates a ParticipantComponent.
+  */
 @Push(
   value = PushMode.AUTOMATIC,
   transport = Transport.WEBSOCKET
