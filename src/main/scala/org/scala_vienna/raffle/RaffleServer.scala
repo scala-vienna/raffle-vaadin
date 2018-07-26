@@ -1,112 +1,102 @@
 package org.scala_vienna.raffle
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
 import org.vaadin.addons.vaactor.VaactorSession
 
 import scala.util.Random
 
+/** Contains all Messages handled by RaffleActor.
+  *
+  * Participants consist of a name and an actor - nothing else!
+  * The RaffleActor does not need to know about the behavior of this actor.
+  *
+  * The current implementation of ParticipantView uses the session actor for the participant.
+  *
+  */
 object RaffleServer {
 
-  /** Participant wants to enter raffle, processed by server
-    *
-    * @param name name of new participant
-    */
-  case class Participate(name: String)
+  /** commands for RaffleActor, processed by server */
+  sealed trait Command
 
-  /** Client wants to stop participating or being coordinator
-    *
-    * @param name name of leaving participant
-    */
-  case class Leave(name: String)
+  /** Participant wants to enter raffle */
+  case class Enter(name: String) extends Command
 
-  /** Client wants to start the Raffle, processed by server */
-  case object StartRaffle
+  /** Participant wants to leave the raffle */
+  case class Leave(name: String) extends Command
 
-  /** Coordinator wants to remove one participant
-    *
-    * @param name name of participant, processed by server
-    */
-  case class Remove(name: String)
+  /** Start the Raffle and select winner */
+  case object SelectWinner extends Command
 
-  /** Coordinator wants to remove all participants, processed by server */
-  case object RemoveAll
+  /** Remove all participants and winner */
+  case object Clear extends Command
 
-  /** The winner is... or no winner yet, sent by server or session */
-  case class Winner(name: Option[String])
+  /** Replies from RaffleActor, returned by server */
+  sealed trait Reply
 
-  /** The current participants are..., sent by server or session */
-  case class Participants(participants: List[String])
+  /** Raffle state, contains list of participants and winner */
+  case class State(participants: Map[String, ActorRef], winner: Option[String])
+    extends Reply {
 
-  case class Error(error: String)
+    def withParticipant(name: String, actor: ActorRef): State = copy(participants + (name -> actor))
 
-  /** Someone wants to know the current list of particpants */
-  case object GetParticipants
+    def withoutParticipant(name: String): State = copy(participants - name)
 
-  /** Someone wants to know the current winner */
-  case object GetWinner
+    def withWinner(name: String): State = copy(winner = Some(name))
+
+    def withoutWinner(): State = copy(winner = None)
+
+    def names: List[String] = participants.keys.toList.sorted
+
+  }
+
+  /** Participant entered the raffle */
+  case class Entered(name: String) extends Reply
+
+  /** Participant left the raffle */
+  case class Left(name: String) extends Reply
+
+  /** Error message */
+  case class Error(error: String) extends Reply
 
   /** Actor handling Raffle server */
-  class ServerActor extends Actor with VaactorSession[Int] {
+  class RaffleActor extends Actor with VaactorSession[State] {
 
-    override val initialSessionState: Int = 0
-
-    //noinspection ActorMutableStateInspection
-    // Current participants
-    private var _participants = List.empty[String]
-
-    private def participants: List[String] = _participants
-
-    private def participants_=(newVal: List[String]): Unit = {
-      if (_participants.size != newVal.size) {
-        winner = None
-      }
-      _participants = newVal
-      broadcast(Participants(_participants))
-    }
-
-    //noinspection ActorMutableStateInspection
-    // Current winner
-    private var _winner: Option[String] = None
-
-    private def winner: Option[String] = _winner
-
-    private def winner_=(newVal: Option[String]): Unit = {
-      _winner = newVal
-      broadcast(Winner(_winner))
-    }
+    override val initialSessionState: State = State(Map.empty, None)
 
     /** Process received messages */
     override val sessionBehaviour: Receive = {
-      // Session wants to participate
-      case Participate(name) =>
-        // no name, reply with failure
-        if (name.isEmpty)
-          sender ! Error("Empty name not valid")
-        // duplicate name, reply with failure
-        else if (participants.contains(name))
-          sender ! Error(s"Name '$name' already participating")
-        // add session to raffle, broadcast new participant list to sessions
-        else {
-          participants :+= name
-          // todo - updateState(session, SessionState.Participating(name))
-        }
-      case Leave(name) =>
-        participants = participants.filter(_ != name)
-      case StartRaffle =>
-        if (participants.nonEmpty) {
-          val winnerIndex = Random.nextInt(participants.size)
-          winner = Some(participants(winnerIndex))
-        }
-      case Remove(name) =>
-        participants = participants.filter(_ != name)
-      // todo - updateState(session, SessionState.Listening)
-      case RemoveAll =>
-        participants = List.empty[String]
-      // todo - for all participants updateState(session, SessionState.Listening)
-
-      case GetParticipants => sender ! Participants(participants)
-
-      case GetWinner => sender ! Winner(winner)
+      case command: Command => command match {
+        // Session wants to participate
+        case Enter(name) =>
+          // no name, reply with failure
+          if (name.isEmpty)
+            sender ! Error("Empty name not valid")
+          // duplicate name, reply with failure
+          else if (sessionState.participants.contains(name))
+            sender ! Error(s"Name '$name' already participating")
+          // add participant to raffle, notify participant, broadcast new state
+          else {
+            sessionState = sessionState.withParticipant(name, sender)
+            sender ! Entered(name)
+            broadcast(sessionState)
+          }
+        case Leave(name) =>
+          if (sessionState.participants.contains(name)) {
+            sessionState.participants(name) ! Left(name)
+            sessionState = sessionState.withoutParticipant(name)
+            broadcast(sessionState)
+          }
+        case SelectWinner =>
+          if (sessionState.participants.nonEmpty) {
+            val name = sessionState.names(Random.nextInt(sessionState.participants.size))
+            sessionState = sessionState.withWinner(name)
+            broadcast(sessionState)
+          }
+        case Clear =>
+          for ((name, actor) <- sessionState.participants) actor ! Left(name)
+          sessionState = sessionState.copy(Map.empty, None)
+          broadcast(sessionState)
+      }
     }
 
   }

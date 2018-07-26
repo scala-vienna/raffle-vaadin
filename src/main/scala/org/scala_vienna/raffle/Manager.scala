@@ -60,7 +60,7 @@ object Manager {
     def createRaffle(): RaffleWithKey = {
       val id = unusedId()
       val key = UUID.randomUUID().toString
-      val actor = context.actorOf(Props[RaffleServer.ServerActor], s"raffle-$id")
+      val actor = context.actorOf(Props[RaffleServer.RaffleActor], s"raffle-$id")
       val raffle = Raffle(id, actor)
       val raffleWithKey = RaffleWithKey(raffle, key)
       rafflesById += (id -> raffleWithKey)

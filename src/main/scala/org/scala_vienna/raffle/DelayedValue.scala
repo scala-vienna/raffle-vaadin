@@ -26,4 +26,6 @@ class DelayedValue[T] private {
     case Some(_) => throw ValueAlreadySet
   }
 
+  override def toString: String = _value.toString
+
 }

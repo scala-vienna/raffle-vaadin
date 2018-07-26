@@ -9,13 +9,12 @@ import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.provider.{DataProvider, ListDataProvider}
-import org.scala_vienna.raffle.RaffleServer._
-import org.vaadin.addons.vaactor.{Vaactor, VaactorSession}
+import org.vaadin.addons.vaactor.Vaactor
 
 import scala.collection.JavaConverters._
 
-class ParticipantComponent(raffle: Manager.Raffle)
-  extends VerticalLayout with Vaactor.HasActor with Vaactor.SubscribeSession {
+class ParticipantComponent extends VerticalLayout
+  with Vaactor.HasActor with Vaactor.SubscribeSession {
 
   /** Contains list of raffle participants */
   val participantsList = new java.util.ArrayList[String]()
@@ -29,14 +28,9 @@ class ParticipantComponent(raffle: Manager.Raffle)
   val participantNameLabel = new Label()
   participantNameLabel.setVisible(false)
 
-  val enterButton = new Button("Enter Raffle", _ =>
-    raffle ! Participate(participantName.getValue)
-  )
+  val enterButton = new Button("Enter Raffle", _ => session ! RaffleServer.Enter(participantName.getValue))
 
-  val leaveButton = new Button("Leave Raffle", { _ =>
-    raffle ! Leave(participantName.getValue)
-    // todo - use name from Session, clear name in session
-  })
+  val leaveButton = new Button("Leave Raffle", _ => session ! RaffleServer.Leave(""))
   leaveButton.setVisible(false)
 
   val enterPanel = new HorizontalLayout(
@@ -49,15 +43,15 @@ class ParticipantComponent(raffle: Manager.Raffle)
   val participantsPanel = new ListBox[String]()
   participantsPanel.setDataProvider(participantsDataProvider)
 
-  val startButton = new Button("Start", _ => raffle ! StartRaffle)
+  val startButton = new Button("Start", _ => session ! RaffleServer.SelectWinner)
   startButton.setVisible(false)
   startButton.setEnabled(false)
 
-  val removeButton = new Button("Remove", _ => raffle ! Remove(participantsPanel.getValue))
+  val removeButton = new Button("Remove", _ => session ! RaffleServer.Leave(participantsPanel.getValue))
   removeButton.setVisible(false)
   removeButton.setEnabled(false)
 
-  val removeAllButton = new Button("Remove All", _ => raffle ! RemoveAll)
+  val removeAllButton = new Button("Remove All", _ => session ! RaffleServer.Clear)
   removeAllButton.setVisible(false)
   removeAllButton.setEnabled(false)
 
@@ -82,49 +76,41 @@ class ParticipantComponent(raffle: Manager.Raffle)
   // MUST NOT access session or receive messages before attach!
   override def onAttach(attachEvent: AttachEvent): Unit = {
     super.onAttach(attachEvent)
-    session ! raffle // tell session the raffle to subscribe
-    session ! VaactorSession.RequestSessionState
-    raffle ! GetParticipants
-    raffle ! GetWinner
+    session ! Session.ReportState
+    session ! Session.RequestRaffleState
   }
 
   /** Receive function, is called in context of VaadinUI (via ui.access) */
   override def receive: Receive = {
-    case SessionState.Participating(name) =>
-      enterButton.setVisible(false)
-      leaveButton.setVisible(true)
-      participantName.setVisible(false)
-      participantNameLabel.setText(s"Good luck, $name!")
-      participantNameLabel.setVisible(true)
-
-    case SessionState.Listening =>
-      enterButton.setVisible(true)
-      leaveButton.setVisible(false)
-      participantName.setVisible(true)
-      participantNameLabel.setVisible(false)
-      startButton.setVisible(false)
-      removeButton.setVisible(false)
-      removeAllButton.setVisible(false)
-
-    case Winner(name) =>
-      if (name.isDefined) {
-        winnerLabel.setText(s"$winnerCaption ${name.get}")
-      }
-      else {
-        winnerLabel.setText(noWinnerCaption)
-      }
-
-    // User entered raffle, update participants list
-    case Participants(participants) =>
-      participantsList.clear()
-      participantsList.addAll(participants.asJava)
-      participantsDataProvider.refreshAll()
-
-      startButton.setEnabled(participants.nonEmpty)
-      removeButton.setEnabled(participants.nonEmpty)
-      removeAllButton.setEnabled(participants.nonEmpty)
-
-    case Error(error) =>
-      Notification.show(error)
+    case reply: RaffleServer.Reply => reply match {
+      case state@RaffleServer.State(participants, winner) =>
+        if (winner.isDefined)
+          winnerLabel.setText(s"$winnerCaption ${winner.get}")
+        else
+          winnerLabel.setText(noWinnerCaption)
+        participantsList.clear()
+        participantsList.addAll(state.names.asJava)
+        participantsDataProvider.refreshAll()
+        startButton.setEnabled(participants.nonEmpty)
+        removeButton.setEnabled(participants.nonEmpty)
+        removeAllButton.setEnabled(participants.nonEmpty)
+      case RaffleServer.Entered(name) =>
+        enterButton.setVisible(false)
+        leaveButton.setVisible(true)
+        participantName.setVisible(false)
+        participantNameLabel.setText(s"Good luck, $name!")
+        participantNameLabel.setVisible(true)
+      case RaffleServer.Left(_) =>
+        enterButton.setVisible(true)
+        leaveButton.setVisible(false)
+        participantName.setVisible(true)
+        participantNameLabel.setVisible(false)
+        startButton.setVisible(false)
+        removeButton.setVisible(false)
+        removeAllButton.setVisible(false)
+      case RaffleServer.Error(error) =>
+        Notification.show(error)
+    }
   }
+
 }

@@ -24,7 +24,7 @@ import org.vaadin.addons.vaactor.Vaactor
   variant = Lumo.DARK
 )
 class ParticipantView extends VerticalLayout
-  with HasUrlParameter[String] with Vaactor.HasActor {
+  with HasUrlParameter[String] with Vaactor.HasActor with Vaactor.HasSession {
 
   val raffleId: DelayedValue[String] = DelayedValue[String]
   val raffle: DelayedValue[Manager.Raffle] = DelayedValue[Manager.Raffle]
@@ -39,7 +39,7 @@ class ParticipantView extends VerticalLayout
 
   override def onAttach(attachEvent: AttachEvent): Unit = {
     super.onAttach(attachEvent)
-    Manager ! Manager.Lookup(raffleId.value) // must no receive anything before attach
+    Manager ! Manager.Lookup(raffleId.value) // must not receive anything before attach
   }
 
   override def receive: Receive = {
@@ -47,7 +47,8 @@ class ParticipantView extends VerticalLayout
       case r: Manager.Raffle =>
         raffle.value = r
         title.setText(s"Vaactor Raffle ${raffle.value.id}")
-        add(new ParticipantComponent(raffle.value))
+        session ! raffle.value // tell session the raffle to subscribe
+        add(new ParticipantComponent())
       case Manager.Error(msg) =>
         Notification.show(msg)
         ui.navigate("")
