@@ -30,10 +30,7 @@ class ParticipantComponent(raffle: Manager.Raffle)
   participantNameLabel.setVisible(false)
 
   val enterButton = new Button("Enter Raffle", _ =>
-    if (participantName.getValue == "raffle2018coord")
-      raffle ! Coordinate(session)
-    else
-      raffle ! Participate(participantName.getValue, session)
+    raffle ! Participate(participantName.getValue, session)
   )
 
   val leaveButton = new Button("Leave Raffle", _ => raffle ! Leave(session))
@@ -97,17 +94,7 @@ class ParticipantComponent(raffle: Manager.Raffle)
       participantNameLabel.setText(s"Good luck, $name!")
       participantNameLabel.setVisible(true)
 
-    case SessionState.Coordinator =>
-      enterButton.setVisible(false)
-      leaveButton.setVisible(true)
-      participantName.setVisible(false)
-      participantNameLabel.setText(s"You are the coordinator!")
-      participantNameLabel.setVisible(true)
-      startButton.setVisible(true)
-      removeButton.setVisible(true)
-      removeAllButton.setVisible(true)
-
-    case SessionState.None =>
+    case SessionState.Listening =>
       enterButton.setVisible(true)
       leaveButton.setVisible(false)
       participantName.setVisible(true)

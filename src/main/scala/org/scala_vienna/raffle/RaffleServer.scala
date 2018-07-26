@@ -12,12 +12,6 @@ object RaffleServer {
     */
   case class Participate(name: String, session: ActorRef)
 
-  /** Client wants to be coordinator (can start, Reset, ...)
-    *
-    * @param session session ActorRef of client, processed by server
-    */
-  case class Coordinate(session: ActorRef)
-
   /** Client wants to stop participating or being coordinator
     *
     * @param session session ActorRef of client, processed by server
@@ -101,25 +95,12 @@ object RaffleServer {
           participants :+= name
           updateState(session, SessionState.Participating(name))
         }
-      case Coordinate(session) =>
-        if (sessions.values.toSeq.contains(SessionState.Coordinator)) {
-          sender ! Error(s"A coordinator is already active.")
-        } else {
-          sessions.get(session) match {
-            case Some(SessionState.None) =>
-              updateState(session, SessionState.Coordinator)
-            case _ =>
-              sender ! Error("Session cannot be coordinator because it is unkown/participating/coordinator.")
-          }
-        }
       case Leave(session) =>
         sessions.get(session) match {
           case Some(SessionState.Participating(name)) =>
             participants = participants.filter(_ != name)
-            updateState(session, SessionState.None)
-          case Some(SessionState.Coordinator) =>
-            updateState(session, SessionState.None)
-          case Some(SessionState.None) | None =>
+            updateState(session, SessionState.Listening)
+          case Some(SessionState.Listening) | None =>
             sender ! Error("Cannot leave raffle. Not participating.")
         }
       case StartRaffle =>
@@ -132,20 +113,20 @@ object RaffleServer {
           case (session, SessionState.Participating(`name`)) => session
         }
         for (session <- matchingSessions) {
-          updateState(session, SessionState.None)
+          updateState(session, SessionState.Listening)
         }
         participants = participants.filter(_ != name)
       case RemoveAll =>
         val allSessions: Iterable[ActorRef] = sessions.keys
         for (session <- allSessions) {
           if (sessions(session).isInstanceOf[SessionState.Participating]) {
-            updateState(session, SessionState.None)
+            updateState(session, SessionState.Listening)
           }
         }
         participants = List.empty[String]
 
       // Session wants to register (for listening to messages broadcasted by the server)
-      case SubscribeSession => if (!sessions.contains(sender)) sessions += (sender -> SessionState.None)
+      case SubscribeSession => if (!sessions.contains(sender)) sessions += (sender -> SessionState.Listening)
 
       case UnsubscribeSession => if (sessions.contains(sender)) sessions -= sender
 

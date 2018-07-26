@@ -8,7 +8,7 @@ class Session extends Actor with VaactorSession[SessionState.State] {
 
   private var raffle: Option[Manager.Raffle] = None
 
-  override val initialSessionState: SessionState.State = SessionState.None
+  override val initialSessionState: SessionState.State = SessionState.Listening
 
   override val sessionBehaviour: Receive = {
     case newState: SessionState.State =>

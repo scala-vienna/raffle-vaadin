@@ -6,8 +6,6 @@ object SessionState {
 
   case class Participating(name: String) extends State
 
-  case object Coordinator extends State
-
-  case object None extends State
+  case object Listening extends State
 
 }
