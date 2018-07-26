@@ -27,6 +27,9 @@ object RaffleServer {
   /** Start the Raffle and select winner */
   case object SelectWinner extends Command
 
+  /** Start the Raffle and select winner */
+  case object ClearWinner extends Command
+
   /** Remove all participants and winner */
   case object Clear extends Command
 
@@ -96,6 +99,9 @@ object RaffleServer {
             sessionState = sessionState.withWinner(name)
             broadcast(sessionState)
           }
+        case ClearWinner =>
+          sessionState = sessionState.withoutWinner()
+          broadcast(sessionState)
         case Clear =>
           for ((name, actor) <- sessionState.participants) actor ! Left(name)
           sessionState = sessionState.copy(Map.empty, None)

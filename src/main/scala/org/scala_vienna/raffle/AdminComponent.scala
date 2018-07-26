@@ -3,7 +3,7 @@ package org.scala_vienna.raffle
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.notification.Notification
-import com.vaadin.flow.component.orderedlayout.VerticalLayout
+import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
 import com.vaadin.flow.component.{AttachEvent, DetachEvent}
 import org.vaadin.addons.vaactor.{Vaactor, VaactorSession}
 
@@ -18,19 +18,38 @@ class AdminComponent(raffle: Manager.Raffle) extends VerticalLayout
 
   val startButton = new Button("Start", _ => raffle ! RaffleServer.SelectWinner)
 
-  val removeButton = new Button("Remove", _ => raffle ! RaffleServer.Leave(participantsPanel.getValue))
+  val resetButton = new Button("Reset", _ => raffle ! RaffleServer.ClearWinner)
+
+  val removeButton = new Button("Remove")
 
   val removeAllButton = new Button("Remove All", _ => raffle ! RaffleServer.Clear)
 
   val winnerLabel = new WinnerPanel()
 
-  add(
-    participantsPanel,
-    winnerLabel,
-    startButton,
-    removeButton,
-    removeAllButton,
-  )
+  removeButton.addClickListener({ _ =>
+    raffle ! RaffleServer.Leave(participantsPanel.getValue)
+    removeButton.setEnabled(false)
+  })
+  removeButton.setEnabled(false)
+  participantsPanel.addValueChangeListener { _ =>
+    Option(participantsPanel.getValue) match {
+      case Some(v) => removeButton.setEnabled(v.nonEmpty)
+      case None => removeButton.setEnabled(false)
+    }
+  }
+
+  add(new HorizontalLayout(
+    new VerticalLayout(
+      participantsPanel,
+      winnerLabel
+    ),
+    new VerticalLayout(
+      startButton,
+      resetButton,
+      removeButton,
+      removeAllButton,
+    )
+  ))
 
   override def onAttach(attachEvent: AttachEvent): Unit = {
     super.onAttach(attachEvent)
@@ -48,8 +67,8 @@ class AdminComponent(raffle: Manager.Raffle) extends VerticalLayout
       case state: RaffleServer.State =>
         winnerLabel.show(state.winner)
         participantsPanel.show(state.names)
-        startButton.setEnabled(state.nonEmpty)
-        removeButton.setEnabled(state.nonEmpty)
+        startButton.setEnabled(state.nonEmpty && state.winner.isEmpty)
+        resetButton.setEnabled(state.winner.nonEmpty)
         removeAllButton.setEnabled(state.nonEmpty)
       case RaffleServer.Entered(_) =>
       case RaffleServer.Left(_) =>
