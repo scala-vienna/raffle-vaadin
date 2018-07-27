@@ -25,9 +25,12 @@ import org.vaadin.addons.vaactor.Vaactor
 )
 class CreatorView extends VerticalLayout with Vaactor.HasActor {
 
+  val qrCode = new GraniteQRCodeGenerator()
+
   add(
     new H1("Vaactor Raffle"),
-    new Button("Create raffle", { _ => Manager ! Manager.Create })
+    new Button("Create raffle", { _ => Manager ! Manager.Create }),
+    new Button("QR-Code", _ => add(qrCode))
   )
 
   override def receive: Receive = {

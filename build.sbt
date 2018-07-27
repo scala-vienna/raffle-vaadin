@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
   "com.vaadin" % "vaadin-core" % vaadinVersion,
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  GraniteQRCodeGenerator.qrcode,
   "org.slf4j" % "slf4j-simple" % "1.7.25"
 )
 
