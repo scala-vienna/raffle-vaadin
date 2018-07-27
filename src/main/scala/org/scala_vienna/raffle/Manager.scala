@@ -69,9 +69,10 @@ object Manager {
     }
 
     def closeRaffle(id: String): Unit =
-      for (r <- rafflesById.get(id)) {
-        rafflesById -= r.raffle.id
-        rafflesByKey -= r.key
+      for (rwk <- rafflesById.get(id)) {
+        rwk.raffle ! RaffleServer.Terminate
+        rafflesById -= rwk.raffle.id
+        rafflesByKey -= rwk.key
       }
 
     override def receive: Receive = {
@@ -89,7 +90,6 @@ object Manager {
             case None => sender ! Error(s"no raffle with key $key active")
           }
         case Close(id) =>
-          // todo - send Shutdown to RaffleServer
           closeRaffle(id)
           sender ! Closed(id)
       }

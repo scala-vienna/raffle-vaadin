@@ -74,6 +74,8 @@ class ParticipantComponent extends VerticalLayout
         participantNameLabel.setVisible(false)
       case RaffleServer.Error(error) =>
         Notification.show(error)
+      case RaffleServer.Terminated =>
+        ui.navigate("")
     }
   }
 

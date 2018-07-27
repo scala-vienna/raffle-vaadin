@@ -55,6 +55,10 @@ class Session extends Actor with VaactorSession[Session.State] {
       case left: RaffleServer.Left =>
         sessionState = sessionState.withoutName()
         broadcast(left)
+      case RaffleServer.Terminated =>
+        raffle = None
+        sessionState = Session.State(None)
+        broadcast(RaffleServer.Terminated)
       case _ =>
         broadcast(reply)
     }

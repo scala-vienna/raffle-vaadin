@@ -57,7 +57,6 @@ class ParticipantView extends VerticalLayout
         ui.navigate("")
       case Manager.Closed(id) =>
         Notification.show(s"raffle $id closed")
-        // todo - Shutdown RaffleComponent
         ui.navigate("")
     }
   }

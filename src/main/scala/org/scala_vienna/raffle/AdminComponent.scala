@@ -70,6 +70,8 @@ class AdminComponent(raffle: Manager.Raffle) extends VerticalLayout
       case RaffleServer.Left(_) =>
       case RaffleServer.Error(error) =>
         Notification.show(error)
+      case RaffleServer.Terminated =>
+        ui.navigate("")
     }
   }
 

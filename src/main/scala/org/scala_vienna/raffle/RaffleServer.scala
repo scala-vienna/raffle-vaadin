@@ -1,6 +1,6 @@
 package org.scala_vienna.raffle
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, PoisonPill}
 import org.vaadin.addons.vaactor.VaactorSession
 
 import scala.util.Random
@@ -33,6 +33,9 @@ object RaffleServer {
   /** Remove all participants and winner */
   case object Clear extends Command
 
+  /** Terminate the Raffle */
+  case object Terminate extends Command
+
   /** Replies from RaffleActor, returned by server */
   sealed trait Reply
 
@@ -61,6 +64,9 @@ object RaffleServer {
 
   /** Participant left the raffle */
   case class Left(name: String) extends Reply
+
+  /** Raffle is terminated */
+  case object Terminated extends Reply
 
   /** Error message */
   case class Error(error: String) extends Reply
@@ -106,6 +112,9 @@ object RaffleServer {
           for ((name, actor) <- sessionState.participants) actor ! Left(name)
           sessionState = sessionState.copy(Map.empty, None)
           broadcast(sessionState)
+        case Terminate =>
+          broadcast(Terminated)
+          self ! PoisonPill
       }
     }
 
