@@ -1,23 +1,80 @@
 package org.scala_vienna.raffle
 
 import akka.actor.Actor
-import org.scala_vienna.raffle.RaffleServer._
 import org.vaadin.addons.vaactor.VaactorSession
 
-class Session extends Actor with VaactorSession[SessionState.State] {
+object Session {
 
-  RaffleServer.raffleServer ! SubscribeSession
+  sealed trait Command
 
-  override val initialSessionState: SessionState.State = SessionState.None
+  /** sends VaactorSession.RequestState to Raffle */
+  case object RequestRaffleState extends Command
 
-  override val sessionBehaviour: Receive = {
-    case newState: SessionState.State =>
-      sessionState = newState
-      broadcast(sessionState)
-    case msg@(Winner(_) | Participants(_)) =>
-      broadcast(msg)
+  /** replies Entered od Left to sender, depending on state */
+  case object ReportState extends Command
+
+  /** Session state, holds name of participant  */
+  case class State(name: Option[String]) {
+
+    def withName(name: String): State = copy(Some(name))
+
+    def withoutName(): State = copy(None)
+
   }
 
-  override def postStop(): Unit = RaffleServer.raffleServer ! UnsubscribeSession
+}
+
+/** Session state consists of participant name.
+  *
+  * Sends all received Raffle commands to raffle.
+  * Broadcasts all received Raffle replies to own subscribers.
+  *
+  * State is maintained based on Replies from raffle.
+  * Raffle instance is sent by ParticipantView.
+  *
+  */
+class Session extends Actor with VaactorSession[Session.State] {
+
+  private var raffle: Option[Manager.Raffle] = None
+
+  override val initialSessionState: Session.State = Session.State(None)
+
+  def send2Raffle(msg: Any): Unit = for (r <- raffle) r ! msg
+
+  override val sessionBehaviour: Receive = {
+    case command: RaffleServer.Command => command match {
+      case leave: RaffleServer.Leave =>
+        if (sessionState.name.isDefined) send2Raffle(leave.copy(name = sessionState.name.get))
+      case _ =>
+        send2Raffle(command)
+    }
+    case reply: RaffleServer.Reply => reply match {
+      case entered: RaffleServer.Entered =>
+        sessionState = sessionState.withName(entered.name)
+        broadcast(entered)
+      case left: RaffleServer.Left =>
+        sessionState = sessionState.withoutName()
+        broadcast(left)
+      case RaffleServer.Terminated =>
+        raffle = None
+        sessionState = Session.State(None)
+        broadcast(RaffleServer.Terminated)
+      case _ =>
+        broadcast(reply)
+    }
+    case command: Session.Command => command match {
+      case Session.RequestRaffleState =>
+        send2Raffle(VaactorSession.RequestSessionState)
+      case Session.ReportState => sessionState.name match {
+        case Some(name) => sender ! RaffleServer.Entered(name)
+        case None => sender ! RaffleServer.Left("")
+      }
+    }
+    case r: Manager.Raffle =>
+      raffle = Some(r)
+      send2Raffle(VaactorSession.Subscribe)
+  }
+
+  override def postStop(): Unit = send2Raffle(VaactorSession.Unsubscribe)
 
 }
