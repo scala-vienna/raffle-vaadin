@@ -20,17 +20,12 @@ class AdminComponent(raffle: Manager.Raffle) extends VerticalLayout
 
   val resetButton = new Button("Reset", _ => raffle ! RaffleServer.ClearWinner)
 
-  val removeButton = new Button("Remove")
+  val removeButton = new Button("Remove", _ => raffle ! RaffleServer.Leave(participantsPanel.getValue))
 
   val removeAllButton = new Button("Remove All", _ => raffle ! RaffleServer.Clear)
 
   val winnerLabel = new WinnerPanel()
 
-  removeButton.addClickListener({ _ =>
-    raffle ! RaffleServer.Leave(participantsPanel.getValue)
-    removeButton.setEnabled(false)
-  })
-  removeButton.setEnabled(false)
   participantsPanel.addValueChangeListener { _ =>
     Option(participantsPanel.getValue) match {
       case Some(v) => removeButton.setEnabled(v.nonEmpty)
@@ -68,6 +63,7 @@ class AdminComponent(raffle: Manager.Raffle) extends VerticalLayout
         winnerLabel.show(state.winner)
         participantsPanel.show(state.names)
         startButton.setEnabled(state.nonEmpty && state.winner.isEmpty)
+        removeButton.setEnabled(false)
         resetButton.setEnabled(state.winner.nonEmpty)
         removeAllButton.setEnabled(state.nonEmpty)
       case RaffleServer.Entered(_) =>
