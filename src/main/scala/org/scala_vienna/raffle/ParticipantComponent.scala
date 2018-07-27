@@ -75,7 +75,7 @@ class ParticipantComponent extends VerticalLayout
       case RaffleServer.Error(error) =>
         Notification.show(error)
       case RaffleServer.Terminated =>
-        ui.navigate("")
+        ConfirmDialog("Raffle terminated!").onOK(_ => ui.navigate("")).open()
     }
   }
 

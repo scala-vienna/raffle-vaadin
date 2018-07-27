@@ -50,14 +50,18 @@ class AdminView extends VerticalLayout
       title.setText(s"Vaactor Raffle ${raffle.value.id}")
       add(
         new AdminComponent(raffle.value),
-        new Button("Close raffle", { _ => Manager ! Manager.Close(raffle.value.id) })
+        new Button("Close raffle", _ =>
+          ConfirmDialog("This will terminate the raffle! - Continue?")
+            .onOK(_ => Manager ! Manager.Close(raffle.value.id))
+            .onCancel(_ => {})
+            .open()
+        )
       )
     case Manager.Error(msg) =>
       Notification.show(msg)
       ui.navigate("")
     case Manager.Closed(id) =>
       Notification.show(s"raffle $id closed")
-      ui.navigate("")
   }
 
   override def receive: Receive = {
