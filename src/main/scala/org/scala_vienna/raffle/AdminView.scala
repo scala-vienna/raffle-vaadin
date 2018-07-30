@@ -33,10 +33,6 @@ class AdminView extends VerticalLayout
   val raffleKey: DelayedValue[String] = DelayedValue[String]
   val raffle: DelayedValue[Manager.Raffle] = DelayedValue[Manager.Raffle]
 
-  val title = new H1()
-
-  add(title)
-
   override def setParameter(event: BeforeEvent, parameter: String): Unit = raffleKey.value = parameter
 
   override def onAttach(attachEvent: AttachEvent): Unit = {
@@ -55,8 +51,8 @@ class AdminView extends VerticalLayout
   private def processManager(reply: Manager.Reply): Unit = reply match {
     case r: Manager.Raffle =>
       raffle.value = r
-      title.setText(s"Vaactor Raffle ${raffle.value.id}")
       add(
+        new H1(s"Vaactor Raffle ${raffle.value.id}"),
         new AdminComponent(raffle.value),
         new HorizontalLayout(
           new Button("QR Code", _ =>

@@ -32,12 +32,6 @@ class ParticipantView extends VerticalLayout
   val raffleId: DelayedValue[String] = DelayedValue[String]
   val raffle: DelayedValue[Manager.Raffle] = DelayedValue[Manager.Raffle]
 
-  val title = new H1()
-
-  add(
-    title
-  )
-
   override def setParameter(event: BeforeEvent, parameter: String): Unit = raffleId.value = parameter
 
   override def onAttach(attachEvent: AttachEvent): Unit = {
@@ -49,9 +43,11 @@ class ParticipantView extends VerticalLayout
     case reply: Manager.Reply => reply match {
       case r: Manager.Raffle =>
         raffle.value = r
-        title.setText(s"Vaactor Raffle ${raffle.value.id}")
         session ! raffle.value // tell session the raffle to subscribe
-        add(new ParticipantComponent())
+        add(
+          new H1(s"Vaactor Raffle ${raffle.value.id}"),
+          new ParticipantComponent()
+        )
       case Manager.Error(msg) =>
         Notification.show(msg)
         ui.navigate("")
