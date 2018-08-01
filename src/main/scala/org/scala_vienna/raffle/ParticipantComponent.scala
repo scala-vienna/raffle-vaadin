@@ -3,7 +3,7 @@ package org.scala_vienna.raffle
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.AttachEvent
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.{Anchor, Label}
+import com.vaadin.flow.component.html.Label
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
 import com.vaadin.flow.component.textfield.TextField
@@ -40,13 +40,10 @@ class ParticipantComponent extends VerticalLayout
 
   val winnerLabel = new WinnerPanel()
 
-  val footer = new Anchor("https://github.com/scala-vienna/vaadin-raffle", "Source code (GitHub)")
-
   add(
     enterPanel,
     participantsPanel,
-    winnerLabel,
-    footer
+    winnerLabel
   )
 
   // MUST NOT access session or receive messages before attach!

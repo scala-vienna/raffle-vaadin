@@ -2,7 +2,6 @@ package org.scala_vienna.raffle
 
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
 import com.vaadin.flow.component.page.Push
@@ -57,7 +56,7 @@ class AdminView extends VerticalLayout
     case r: Manager.Raffle =>
       raffle.value = r
       add(
-        new H1(s"Vaactor Raffle ${raffle.value.id}"),
+        CommonComponents.hesder(s"Vaactor Raffle ${raffle.value.id}"),
         new AdminComponent(raffle.value),
         new HorizontalLayout(
           new Button("QR Code", _ =>
@@ -75,7 +74,8 @@ class AdminView extends VerticalLayout
               .onCancel(_ => {})
               .open()
           )
-        )
+        ),
+        CommonComponents.footer()
       )
     case Manager.Error(msg) =>
       Notification.show(msg)

@@ -2,7 +2,6 @@ package org.scala_vienna.raffle
 
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.AttachEvent
-import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.page.Push
@@ -45,8 +44,9 @@ class ParticipantView extends VerticalLayout
         raffle.value = r
         session ! raffle.value // tell session the raffle to subscribe
         add(
-          new H1(s"Vaactor Raffle ${raffle.value.id}"),
-          new ParticipantComponent()
+          CommonComponents.hesder(s"Vaactor Raffle ${raffle.value.id}"),
+          new ParticipantComponent(),
+          CommonComponents.footer()
         )
       case Manager.Error(msg) =>
         Notification.show(msg)

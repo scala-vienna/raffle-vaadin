@@ -2,7 +2,6 @@ package org.scala_vienna.raffle
 
 import akka.actor.Actor.Receive
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.page.Push
@@ -26,8 +25,9 @@ import org.vaadin.addons.vaactor.Vaactor
 class CreatorView extends VerticalLayout with Vaactor.HasActor {
 
   add(
-    new H1("Vaactor Raffle"),
+    CommonComponents.hesder("Vaactor Raffle"),
     new Button("Create raffle", { _ => Manager ! Manager.Create }),
+    CommonComponents.footer()
   )
 
   override def receive: Receive = {
