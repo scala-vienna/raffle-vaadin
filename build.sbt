@@ -30,7 +30,7 @@ herokuDeployLib := "com.heroku.sdk" % "heroku-deploy" % "2.0.4"
 // To deploy to heroku on Windows use:
 // sbt "set herokuAppName := ""<heroku app name>""" herokuDeploy
 // Prerequisites: heroku cli is installed, heroku login has been called and the heroku app exists
-herokuAppName := ""
+herokuAppName := "vaactor-raffle"
 
 enablePlugins(JettyPlugin)
 enablePlugins(HerokuDeploy)

@@ -1,12 +1,12 @@
 package org.scala_vienna.raffle
 
 import akka.actor.Actor.Receive
-import com.vaadin.flow.component.AttachEvent
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.{HorizontalLayout, VerticalLayout}
 import com.vaadin.flow.component.page.Push
+import com.vaadin.flow.component.{AttachEvent, DetachEvent}
 import com.vaadin.flow.router.{BeforeEvent, HasUrlParameter, Route}
 import com.vaadin.flow.shared.communication.PushMode
 import com.vaadin.flow.shared.ui.Transport
@@ -37,7 +37,12 @@ class AdminView extends VerticalLayout
 
   override def onAttach(attachEvent: AttachEvent): Unit = {
     super.onAttach(attachEvent)
-    Manager ! Manager.LookupKey(raffleKey.value) // must no receive anything before attach
+    Manager ! Manager.LookupKey(raffleKey.value) // must not receive anything before attach
+  }
+
+  override def onDetach(detachEvent: DetachEvent): Unit = {
+    Manager ! Manager.Close(raffle.value.id) // close raffle on detach - avoids memory leak on detach by timeout
+    super.onDetach(detachEvent)
   }
 
   private def qrCode(id: String): GraniteQRCodeGenerator = {
