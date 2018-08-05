@@ -56,7 +56,7 @@ class AdminView extends VerticalLayout
     case r: Manager.Raffle =>
       raffle.value = r
       add(
-        CommonComponents.hesder(s"Vaactor Raffle ${raffle.value.id}"),
+        CommonComponents.header(s"Vaactor Raffle ${raffle.value.id}"),
         new AdminComponent(raffle.value),
         new HorizontalLayout(
           new Button("QR Code", _ =>

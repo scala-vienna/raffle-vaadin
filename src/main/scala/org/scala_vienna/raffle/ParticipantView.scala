@@ -44,7 +44,7 @@ class ParticipantView extends VerticalLayout
         raffle.value = r
         session ! raffle.value // tell session the raffle to subscribe
         add(
-          CommonComponents.hesder(s"Vaactor Raffle ${raffle.value.id}"),
+          CommonComponents.header(s"Vaactor Raffle ${raffle.value.id}"),
           new ParticipantComponent(),
           CommonComponents.footer()
         )

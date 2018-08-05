@@ -7,7 +7,7 @@ import org.vaadin.addons.vaactor.loadedConfig
 
 object CommonComponents {
 
-  def hesder(text: String): Component = new H1(text) {
+  def header(text: String): Component = new H1(text) {
 
     getElement.setAttribute("style",
       "margin-top: 0.50em; margin-bottom: 0.25em; text-shadow: -5px -5px 10px white;")

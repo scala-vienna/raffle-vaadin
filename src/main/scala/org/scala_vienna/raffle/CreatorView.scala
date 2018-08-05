@@ -25,7 +25,7 @@ import org.vaadin.addons.vaactor.Vaactor
 class CreatorView extends VerticalLayout with Vaactor.HasActor {
 
   add(
-    CommonComponents.hesder("Vaactor Raffle"),
+    CommonComponents.header("Vaactor Raffle"),
     new Button("Create raffle", { _ => Manager ! Manager.Create }),
     CommonComponents.footer()
   )
