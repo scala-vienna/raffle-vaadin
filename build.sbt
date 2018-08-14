@@ -1,4 +1,4 @@
-name := "vaadin-raffle"
+name := "raffle-vaadin"
 
 version := "2.0.0"
 
