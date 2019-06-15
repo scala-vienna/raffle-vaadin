@@ -23,14 +23,19 @@ libraryDependencies ++= Seq(
 
 containerLibs in Jetty := Seq("org.eclipse.jetty" % "jetty-runner" % "9.3.21.v20170918" intransitive())
 
-// Use more recent heroku-deploy lib due to authentication error with older version
-herokuDeployLib := "com.heroku.sdk" % "heroku-deploy" % "2.0.4"
-
-// Can be set here or on command line.
-// To deploy to heroku on Windows use:
-// sbt "set herokuAppName := ""<heroku app name>""" herokuDeploy
-// Prerequisites: heroku cli is installed, heroku login has been called and the heroku app exists
-herokuAppName := "vaactor-raffle"
-
 enablePlugins(JettyPlugin)
-enablePlugins(HerokuDeploy)
+
+// Heroku needs a stage task because it calls "sbt compile stage"
+val stage = taskKey[Unit]("Stage task")
+
+val Stage = config("stage")
+
+stage := {
+  _root_.sbt.Keys.`package`.value
+  (update in Stage).value.allFiles.foreach { f =>
+    if (f.getName.matches("jetty-runner-.*jar")) {
+      println("copying " + f.getName)
+      IO.copyFile(f, baseDirectory.value / "target" / "jetty-runner.jar")
+    }
+  }
+}
