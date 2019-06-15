@@ -2,7 +2,7 @@
 - Install heroku CLI
 - In the folder containing the clone of https://github.com/scala-vienna/raffle-vaadin.git:
     - Adapt the external-url property in src\main\resources\application.conf to the corresponding heroku url, e.g., https://raffle-vaadin.herokuapp.com
-    - git commit locally
+    - git commit locally to master
     - Execute "heroku login"
 	- Execute "heroku git:remote -a <heroku appname, e.g., raffle-vaadin>"
 	- Execute "git push heroku master"
