@@ -1,10 +1,12 @@
 - Create a heroku app or use an existing one, e.g., "raffle-vaadin" accessible at https://raffle-vaadin.herokuapp.com
-- Install heroku CLI
-- Execute "heroku login"
 - In the folder containing the clone of https://github.com/scala-vienna/raffle-vaadin.git:
+    - Adapt the external-url property in src\main\resources\application.conf to the corresponding heroku url, e.g., https://raffle-vaadin.herokuapp.com
+    - git commit locally
+    - Install heroku CLI
+    - Execute "heroku login"
 	- Execute "heroku git:remote -a <heroku appname, e.g., raffle-vaadin>"
 	- Execute "git push heroku master"
-- The app should be accessible here: https://raffle-vaadin.herokuapp.com
+- Now, the app should be running here: https://raffle-vaadin.herokuapp.com
 
 Trouble-shooting:
 In case at the end of "git push heroku master" an error message like "Compiled slug size: 500.6M is too large (max is 500M)" is displayed, execute the following commands:
